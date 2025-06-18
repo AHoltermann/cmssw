@@ -53,7 +53,7 @@
 
 #include "HeavyIonsAnalysis/JetAnalysis/interface/HiInclusiveJetAnalyzer.h"
 
-#include <xgboost/c_api.h> 
+//#include <xgboost/c_api.h> 
 
 template <class T>
 class dynGroomedJets : public edm::global::EDProducer<> {
@@ -61,7 +61,7 @@ public:
   explicit dynGroomedJets(const edm::ParameterSet&);
   // ~dynGroomedJets() override = default;
   ~dynGroomedJets() {
-      if (aggregateHF_ && withXGB_) XGBoosterFree(*xgbTagger);
+    //if (aggregateHF_ && withXGB_) XGBoosterFree(*xgbTagger);
   }
 
   static void fillDescriptions(edm::ConfigurationDescriptions&);
@@ -97,7 +97,7 @@ private:
   edm::EDGetTokenT<reco::TrackToGenParticleMap> candToGenParticleMapToken_;
 
   std::unique_ptr<TMVAEvaluator> tmvaTagger;
-  std::unique_ptr<BoosterHandle> xgbTagger;
+  //std::unique_ptr<BoosterHandle> xgbTagger;
 
   bool isMC_;
 
@@ -119,7 +119,7 @@ private:
   bool withCuts_;
   bool withXGB_;
   bool withTMVA_;
-  edm::FileInPath xgb_path_;
+  //edm::FileInPath xgb_path_;
   edm::FileInPath tmva_path_;
   std::vector<std::string> tmva_variable_names_;
   std::vector<std::string> tmva_spectator_names_;
@@ -157,7 +157,7 @@ dynGroomedJets<T>::dynGroomedJets(const edm::ParameterSet& iConfig) {
     withTMVA_ = iConfig.getParameter<bool>("aggregateWithTMVA");
 
     if (withXGB_) {
-      xgb_path_ = iConfig.getParameter<edm::FileInPath>("xgb_path");
+      //xgb_path_ = iConfig.getParameter<edm::FileInPath>("xgb_path");
     }
     if (withTMVA_) {
       tmva_path_ = iConfig.getParameter<edm::FileInPath>("tmva_path");
@@ -178,11 +178,13 @@ dynGroomedJets<T>::dynGroomedJets(const edm::ParameterSet& iConfig) {
   if (aggregateHF_ && isMC_) 
     candToGenParticleMapToken_ = consumes<reco::TrackToGenParticleMap>(iConfig.getParameter<edm::InputTag>("candToGenParticleMap"));
   // Initialize objects 
+  /*
   if (aggregateHF_ && withXGB_) {
     xgbTagger = std::make_unique<BoosterHandle>();
     XGBoosterCreate(NULL, 0, &(*xgbTagger));
     auto res = XGBoosterLoadModel(*xgbTagger, xgb_path_.fullPath().c_str());    
   }
+  */
 
   if (aggregateHF_ && withTMVA_) {
     tmvaTagger = std::make_unique<TMVAEvaluator>();
@@ -204,7 +206,7 @@ dynGroomedJets<T>::dynGroomedJets(const edm::ParameterSet& iConfig) {
 
 template <class T>
 void dynGroomedJets<T>::produce(edm::StreamID, edm::Event& iEvent, const edm::EventSetup& iSetup) const {
-  // std::cout << "In dynGroomedJets" << std::endl;
+  //std::cout << "In dynGroomedJets" << std::endl;
 
   auto jetCollection = std::make_unique<reco::BasicJetCollection>();
   auto subjetCollection = std::make_unique<reco::BasicJetCollection>();
@@ -230,11 +232,11 @@ void dynGroomedJets<T>::produce(edm::StreamID, edm::Event& iEvent, const edm::Ev
 
   edm::Handle<edm::View<pat::PackedCandidate>> pfcandsPacked;
   bool isPackedPF = iEvent.getByToken(packedConstitSrc_, pfcandsPacked);
-  // std::cout << "DEBUG: pfcandPacked ok" << std::endl;
+  //std::cout << "DEBUG: pfcandPacked ok" << std::endl;
 
   // -- For aggregation -- //
   edm::Handle<reco::TrackToGenParticleMap> candToGenParticleMap;
-  BoosterHandle booster_;
+  //BoosterHandle booster_;
   if (aggregateHF_ && isMC_) {
     iEvent.getByToken(candToGenParticleMapToken_, candToGenParticleMap);
   } 
@@ -244,7 +246,7 @@ void dynGroomedJets<T>::produce(edm::StreamID, edm::Event& iEvent, const edm::Ev
 
   int jetIndex = 0;
   for (const T& jet : *jets) { 
-    // std::cout << "new jet with pt: " << jet.pt() << std::endl;
+    //std::cout << "new jet with pt: " << jet.pt() << std::endl;
     if (doGenJets_ && isMC_) {
       const reco::GenJet *genJet = jet.genJet();
       if (!genJet) continue;
@@ -282,24 +284,24 @@ void dynGroomedJets<T>::produce(edm::StreamID, edm::Event& iEvent, const edm::Ev
         } else {
           continue;
         }
-        // std::cout << "genjet i = " << jetIndex << " pt " << jet.pt() << " pt " << pseudoHF.pt() << std::endl;
+	//std::cout << "genjet i = " << jetIndex << " pt " << jet.pt() << " pt " << pseudoHF.pt() << std::endl;
       } else {
-        // std::cout << "------->Aggregating HF for reco jet" << std::endl; 
-        // std::cout << "reco jet i = " << jetIndex << " pt " << jet.pt() << std::endl;
+	//std::cout << "------->Aggregating HF for reco jet" << std::endl; 
+	//std::cout << "reco jet i = " << jetIndex << " pt " << jet.pt() << std::endl;
         reco::TrackToGenParticleMap recoMap = isMC_ ? *candToGenParticleMap : reco::TrackToGenParticleMap();
         auto tempTuple = aggregateHFReco(jet, recoMap);
         jetConstituents = std::get<0>(tempTuple);
         auto droppedTracks = std::get<1>(tempTuple);
         pseudoHF = std::get<2>(tempTuple);
-        // std::cout << "\t pseudoHF m=" << pseudoHF.mass() << std::endl;
-
+	//std::cout << "\t pseudoHF m=" << pseudoHF.mass() << std::endl;
+	
         droppedTrackCollection->insert(droppedTrackCollection->end(), droppedTracks.begin(), droppedTracks.end());
-        // std::cout << "reco jet i = " << jetIndex << " pt " << jet.pt() << " mb " << pseudoHF.mass() << std::endl;
+	//std::cout << "reco jet i = " << jetIndex << " pt " << jet.pt() << " mb " << pseudoHF.mass() << std::endl;
       } 
 
       pseudoHFCollection->push_back(pseudoHF);
     } else {
-      // std::cout << "\tNot aggregating" << std::endl;
+      //std::cout << "\tNot aggregating" << std::endl;
       std::vector<edm::Ptr<reco::Candidate>> constituents = {}; 
       if (doGenJets_ && isMC_) {
         const reco::GenJet *genJet = jet.genJet();
@@ -589,7 +591,7 @@ template <class T>
 typename dynGroomedJets<T>::jetConstituentsPseudoHFTuple dynGroomedJets<T>::aggregateHFReco(const T& jet, 
                                                                reco::TrackToGenParticleMap candToGenParticleMap) const
 {
-  // std::cout << "Aggregating Bs in reco jet" << std::endl;
+  //std::cout << "Aggregating Bs in reco jet" << std::endl;
 
   // Input and output particle collections
   std::vector<edm::Ptr<reco::Candidate>> inputJetConstituents = jet.getJetConstituents();
@@ -600,14 +602,12 @@ typename dynGroomedJets<T>::jetConstituentsPseudoHFTuple dynGroomedJets<T>::aggr
   // Particle collection to aggregate into pseudo-Bs
   std::map<int, std::vector<edm::Ptr<reco::Candidate>>> hfConstituentsMap;
   reco::Candidate::PolarLorentzVector totalPseudoHF(0., 0., 0., 0.);
-
+  //std::cout<<" grabbing tag infos "<<std::endl;
   // Grab the IP and SV tag info from the jet
   const reco::CandIPTagInfo *ipTagInfo = jet.tagInfoCandIP(ipTagInfoLabel_.c_str());
   const std::vector<reco::btag::TrackIPData> ipData = ipTagInfo->impactParameterData();
   const std::vector<edm::Ptr<reco::Candidate>> ipTracks = ipTagInfo->selectedTracks();
-
   const reco::CandSecondaryVertexTagInfo *svTagInfo = jet.tagInfoCandSecondaryVertex(svTagInfoLabel_.c_str());
-
   // Go over jet constituents 
   for (const edm::Ptr<reco::Candidate> constit : jet.getJetConstituents()) {
     if (chargedOnly_ && constit->charge() == 0) continue;
@@ -730,10 +730,10 @@ typename dynGroomedJets<T>::jetConstituentsPseudoHFTuple dynGroomedJets<T>::aggr
         // Initialize BDT related variables
         float threshold = 0.44;
 
-        bst_ulong out_len = 0; // bst_ulong is a typedef of unsigned long
+        //bst_ulong out_len = 0; // bst_ulong is a typedef of unsigned long
         const float *f; // array to store predictions
         
-        DMatrixHandle data_;
+        //DMatrixHandle data_;
         const int nFeatures = 13;
         const int nEntries = 1;
         // if (svtxdls>0) {}
@@ -753,8 +753,8 @@ typename dynGroomedJets<T>::jetConstituentsPseudoHFTuple dynGroomedJets<T>::aggr
         //   std::cout << var << std::endl;
         // }
         
-        XGDMatrixCreateFromMat((float *)trackDataBDT, nEntries, nFeatures, missing_value, &data_);
-        XGBoosterPredict(*xgbTagger, data_, 0, 0, &out_len, &f);
+        //XGDMatrixCreateFromMat((float *)trackDataBDT, nEntries, nFeatures, missing_value, &data_);
+        //XGBoosterPredict(*xgbTagger, data_, 0, 0, &out_len, &f);
         float prediction = f[0];
         // float prediction = 0.5;
         // std::cout << "trk with pt " << constit->pt()
@@ -973,7 +973,7 @@ void dynGroomedJets<T>::fillDescriptions(edm::ConfigurationDescriptions& descrip
   desc.add<bool>("aggregateWithCuts", false);
   desc.add<bool>("aggregateWithXGB", false);
   desc.add<bool>("aggregateWithTMVA", false);
-  desc.add<edm::FileInPath>("xgb_path", edm::FileInPath("RecoHI/HiJetAlgos/data/dummy.model"));
+  //desc.add<edm::FileInPath>("xgb_path", edm::FileInPath("RecoHI/HiJetAlgos/data/dummy.model"));
   desc.add<edm::FileInPath>("tmva_path", edm::FileInPath("RecoHI/HiJetAlgos/data/dummy.weights.xml"));
   desc.add<std::vector<std::string>>("tmva_variables", {});
   desc.add<std::vector<std::string>>("tmva_spectators", {});

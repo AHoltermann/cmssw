@@ -100,7 +100,7 @@ TrackToGenParticleMapProducer::TrackToGenParticleMapProducer(const edm::Paramete
 
 // ------------ method called to produce the data  ------------
 void TrackToGenParticleMapProducer::produce(edm::StreamID, edm::Event &evt, const edm::EventSetup &setup) const {
-//   std::cout << "In TrackToGenParticleMapProducer produce" << std::endl;
+  //std::cout << "In TrackToGenParticleMapProducer produce" << std::endl;
 
   edm::Handle<std::vector<JetType>> inputJets;
   evt.getByToken(inputJetsToken_, inputJets);
@@ -115,7 +115,7 @@ void TrackToGenParticleMapProducer::produce(edm::StreamID, edm::Event &evt, cons
 
   
   for (const JetType jet : *inputJets) {
-    // std::cout << "New jet" << std::endl;
+    //std::cout << "New jet" << std::endl;
 
     // Go over the jet constituents
     for (const TrackTypePtr constitPtr : jet.getJetConstituents()) {
@@ -126,11 +126,9 @@ void TrackToGenParticleMapProducer::produce(edm::StreamID, edm::Event &evt, cons
       if (matchGenParticle.isNonnull()) 
         trackToGenParticleMap->insert(std::pair<TrackTypePtr, GenTypePtr>(constitPtr, matchGenParticle));
     } // end reco jet constituents loop
-
     // grab the gen jet
     const GenJetType *genJet = jet.genJet();
     if (!genJet) continue;
-
     // Go over the gen jet constituents 
     for (const TrackTypePtr constitPtr : genJet->getJetConstituents()) {
       if (chargedOnly_&&constitPtr->charge()==0) continue;
@@ -139,8 +137,8 @@ void TrackToGenParticleMapProducer::produce(edm::StreamID, edm::Event &evt, cons
       if (matchGenParticle.isNonnull()) 
         genConstitToGenParticleMap->insert(std::pair<TrackTypePtr, GenTypePtr>(constitPtr, matchGenParticle));
     } // end gen jet constituents loop
-
-    // [TEST]: Go over the SV tracks 
+    /*
+    // [TEST]: Go over the SV tracks -Matt: removed, Lida says not needed
     std::string svTagInfoLabel_ = "pfInclusiveSecondaryVertexFinder";
     const reco::CandSecondaryVertexTagInfo *svTagInfo = jet.tagInfoCandSecondaryVertex(svTagInfoLabel_.c_str());
     int nsv = svTagInfo->nVertices();
@@ -148,21 +146,22 @@ void TrackToGenParticleMapProducer::produce(edm::StreamID, edm::Event &evt, cons
       const std::vector<reco::CandidatePtr> svTracks = svTagInfo->vertexTracks(isv);
       for (auto svTrkPtr : svTracks) {
         if (chargedOnly_&&svTrkPtr->charge()==0) continue;
-
         // Look if the particle is already in the map
         if (trackToGenParticleMap->find(svTrkPtr) != trackToGenParticleMap->end()) {
           continue;
         }
-
         // If not, look for match in gen particles 
         GenTypePtr matchGenParticle = findMatch(svTrkPtr, genParticles);
         if (matchGenParticle.isNonnull()) 
           trackToGenParticleMap->insert(std::pair<TrackTypePtr, GenTypePtr>(svTrkPtr, matchGenParticle));
-      } // end sv trk loop
+     } // end sv trk loop
     } // end sv loop
+    */
   } // end jet loop
+  
   evt.put(std::move(trackToGenParticleMap), "trackToGenParticleMap");
   evt.put(std::move(genConstitToGenParticleMap), "genConstitToGenParticleMap");
+  
 }
 
 TrackToGenParticleMapProducer::GenTypePtr 

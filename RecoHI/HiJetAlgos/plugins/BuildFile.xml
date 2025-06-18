@@ -13,7 +13,6 @@
 <use   name="AnalysisDataFormats/TrackInfo"/>
 
 <use   name="root"/>
-<use   name="xgboost"/>
 
 <flags   EDM_PLUGIN="1"/>
 

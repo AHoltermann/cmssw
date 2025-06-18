@@ -38,7 +38,7 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   doMujets_ = iConfig.getUntrackedParameter<bool>("doMujets", false);
   if (doMujets_) mujetTag_ = consumes<pat::JetCollection>(iConfig.getParameter<InputTag>("mujetTag"));
 
-  jetTagInfos_ = consumes<reco::JetTagCollection>(edm::InputTag("pfJetProbabilityBJetTags"));
+  //jetTagInfos_ = consumes<reco::JetTagCollection>(edm::InputTag("pfJetProbabilityBJetTagsAK2PFCHSBtag"));
 
   useQuality_ = iConfig.getUntrackedParameter<bool>("useQuality", true);
   trackQuality_ = iConfig.getUntrackedParameter<std::string>("trackQuality", "highPurity");
@@ -144,9 +144,10 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   }
 
   if (doCandidateBtagging_) {
-    deepCSVJetTags_ = "pfDeepCSVJetTags:probb";
+    //deepCSVJetTags_ = "pfDeepCSVJetTags:probb";
+    //pfJPJetTags_ = "pfJetProbabilityBJetTagsAK2PFCHSBtag";
     pfJPJetTags_ = "pfJetProbabilityBJetTags";
-    deepFlavourJetTags_ = "pfDeepFlavourJetTags";
+    //deepFlavourJetTags_ = "pfDeepFlavourJetTags";
     particleNetJetTags_ = "pfParticleNetAK4JetTags";
     particleNetDiscriminatorsJetTags_ = "pfParticleNetAK4DiscriminatorsJetTags";
   }
@@ -463,12 +464,12 @@ void HiInclusiveJetAnalyzer::beginJob() {
     t->Branch("muchg", jets_.muchg, "muchg[nref]/I");
   }
   if(doCandidateBtagging_){
-    t->Branch("discr_deepCSV", jets_.discr_deepCSV, "discr_deepCSV[nref]/F");
+    //t->Branch("discr_deepCSV", jets_.discr_deepCSV, "discr_deepCSV[nref]/F");
     t->Branch("discr_pfJP", jets_.discr_pfJP, "discr_pfJP[nref]/F");
-    t->Branch("discr_deepFlavour_b", jets_.discr_deepFlavour_b, "discr_deepFlavour_b[nref]/F");
-    t->Branch("discr_deepFlavour_bb", jets_.discr_deepFlavour_bb, "discr_deepFlavour_bb[nref]/F");
-    t->Branch("discr_deepFlavour_lepb", jets_.discr_deepFlavour_lepb, "discr_deepFlavour_lepb[nref]/F");
-    t->Branch("discr_deepFlavour_c", jets_.discr_deepFlavour_c, "discr_deepFlavour_c[nref]/F");
+    //t->Branch("discr_deepFlavour_b", jets_.discr_deepFlavour_b, "discr_deepFlavour_b[nref]/F");
+    //t->Branch("discr_deepFlavour_bb", jets_.discr_deepFlavour_bb, "discr_deepFlavour_bb[nref]/F");
+    //t->Branch("discr_deepFlavour_lepb", jets_.discr_deepFlavour_lepb, "discr_deepFlavour_lepb[nref]/F");
+    //t->Branch("discr_deepFlavour_c", jets_.discr_deepFlavour_c, "discr_deepFlavour_c[nref]/F");
     t->Branch("discr_particleNet_bb", jets_.discr_particleNet_bb, "discr_particleNet_bb[nref]/F");
     t->Branch("discr_particleNet_pu", jets_.discr_particleNet_pu, "discr_particleNet_pu[nref]/F");
     t->Branch("discr_particleNet_cc", jets_.discr_particleNet_cc, "discr_particleNet_cc[nref]/F");
@@ -477,10 +478,12 @@ void HiInclusiveJetAnalyzer::beginJob() {
     t->Branch("discr_particleNet_b", jets_.discr_particleNet_b, "discr_particleNet_b[nref]/F");
     t->Branch("discr_particleNet_uds", jets_.discr_particleNet_uds, "discr_particleNet_uds[nref]/F");
     t->Branch("discr_particleNet_g", jets_.discr_particleNet_g, "discr_particleNet_g[nref]/F");
-    t->Branch("discr_particleNet_BvsAll", jets_.discr_particleNet_BvsAll, "discr_particleNet_BvsAll[nref]/F");
-    t->Branch("discr_particleNet_CvsB", jets_.discr_particleNet_CvsB, "discr_particleNet_CvsB[nref]/F");
-    t->Branch("discr_particleNet_CvsL", jets_.discr_particleNet_CvsL, "discr_particleNet_CvsL[nref]/F");
-    t->Branch("discr_particleNet_QvsG", jets_.discr_particleNet_QvsG, "discr_particleNet_QvsG[nref]/F");
+    /*
+      t->Branch("discr_particleNet_BvsAll", jets_.discr_particleNet_BvsAll, "discr_particleNet_BvsAll[nref]/F");
+      t->Branch("discr_particleNet_CvsB", jets_.discr_particleNet_CvsB, "discr_particleNet_CvsB[nref]/F");
+      t->Branch("discr_particleNet_CvsL", jets_.discr_particleNet_CvsL, "discr_particleNet_CvsL[nref]/F");
+      t->Branch("discr_particleNet_QvsG", jets_.discr_particleNet_QvsG, "discr_particleNet_QvsG[nref]/F");
+    */
   }
   if (isMC_) {
     if (useHepMC_) {
@@ -658,8 +661,8 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
   edm::Handle<pat::JetCollection> mujets;
   if (doMujets_) iEvent.getByToken(mujetTag_, mujets);
 
-  edm::Handle<reco::JetTagCollection> jetTagInfos;
-  iEvent.getByToken(jetTagInfos_, jetTagInfos);
+  //edm::Handle<reco::JetTagCollection> jetTagInfos;
+  //iEvent.getByToken(jetTagInfos_, jetTagInfos);
 
   if (doGenSubJets_)
     iEvent.getByToken(subjetGenTag_, gensubjets_);
@@ -802,27 +805,28 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
     }
 
     if (doCandidateBtagging_){
-      jets_.discr_deepCSV[jets_.nref] = jet.bDiscriminator(deepCSVJetTags_);
-      // jets_.discr_pfJP[jets_.nref] = jet.bDiscriminator(pfJPJetTags_);
-      jets_.discr_pfJP[jets_.nref] = (*jetTagInfos)[j].second;
-      jets_.discr_deepFlavour_b[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":probb");
-      jets_.discr_deepFlavour_bb[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":probbb");
-      jets_.discr_deepFlavour_lepb[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":problepb");
-      jets_.discr_deepFlavour_c[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":probbb");
-      jets_.discr_particleNet_bb[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":probc");
-      jets_.discr_particleNet_pu[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probpu");
-      jets_.discr_particleNet_cc[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probcc");
-      jets_.discr_particleNet_undef[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probundef");
-      jets_.discr_particleNet_c[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probc");
-      jets_.discr_particleNet_b[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probb");
-      jets_.discr_particleNet_uds[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probuds");
-      jets_.discr_particleNet_g[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probg");
-      jets_.discr_particleNet_BvsAll[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":BvsAll");
-      jets_.discr_particleNet_CvsB[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":CvsB");
-      jets_.discr_particleNet_CvsL[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":CvsL");
-      jets_.discr_particleNet_QvsG[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":QvsG");
-
-      // for (auto discrPair : jet.getPairDiscri()) {
+      //jets_.discr_deepCSV[jets_.nref] = jet.bDiscriminator(deepCSVJetTags_);
+       jets_.discr_pfJP[jets_.nref] = jet.bDiscriminator(pfJPJetTags_);
+      //jets_.discr_pfJP[jets_.nref] = (*jetTagInfos)[j].second;
+       //jets_.discr_deepFlavour_b[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":probb");
+       //jets_.discr_deepFlavour_bb[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":probbb");
+       //jets_.discr_deepFlavour_lepb[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":problepb");
+       //jets_.discr_deepFlavour_c[jets_.nref] = jet.bDiscriminator(deepFlavourJetTags_ + ":probbb");
+       jets_.discr_particleNet_bb[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probc");
+       jets_.discr_particleNet_pu[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probpu");
+       jets_.discr_particleNet_cc[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probcc");
+       jets_.discr_particleNet_undef[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probundef");
+       jets_.discr_particleNet_c[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probc");
+       jets_.discr_particleNet_b[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probb");
+       jets_.discr_particleNet_uds[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probuds");
+       jets_.discr_particleNet_g[jets_.nref] = jet.bDiscriminator(particleNetJetTags_ + ":probg");
+       /*
+       jets_.discr_particleNet_BvsAll[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":BvsAll");
+       jets_.discr_particleNet_CvsB[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":CvsB");
+       jets_.discr_particleNet_CvsL[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":CvsL");
+       jets_.discr_particleNet_QvsG[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":QvsG");
+       */
+       // for (auto discrPair : jet.getPairDiscri()) {
       //   TString label = discrPair.first;
       //   // if (!label.Contains("Deep") && !label.Contains("deep") && !label.Contains("Net")) continue;
       //   if (!label.Contains("Net")) continue;

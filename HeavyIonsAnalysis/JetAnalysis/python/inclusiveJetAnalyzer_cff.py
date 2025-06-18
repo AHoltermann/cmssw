@@ -4,6 +4,7 @@ inclusiveJetAnalyzer = cms.EDAnalyzer(
     "HiInclusiveJetAnalyzer",
     jetTag = cms.InputTag("ak4PFJets"),
     jetPtMin = cms.double(5.0),
+    matchJets = cms.untracked.bool(False),
     matchTag = cms.untracked.InputTag("akPu4PFpatJets"),
     genjetTag = cms.InputTag("ak4HiGenJets"),
     eventInfoTag = cms.InputTag("generator"),
