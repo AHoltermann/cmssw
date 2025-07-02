@@ -61,6 +61,16 @@ private:
       fastjet::JetDefinition(fastjet::JetAlgorithm::antikt_algorithm, 2, fastjet::WTA_pt_scheme);
   //--------------------------------------------
 
+
+  void IterativeDeclusteringRec(double groom_type, double groom_combine, const reco::Jet& jet);
+  void IterativeDeclusteringGen(double groom_type, double groom_combine, const reco::GenJet& jet);
+  
+  void RecoTruthSplitMatching(std::vector<fastjet::PseudoJet> &constituents_level1, fastjet::PseudoJet &hardest_level2, bool *bool_array, int *hardest_level1_split);
+  void TruthRecoRecoTruthMatching_SD();
+  void TruthRecoRecoTruthMatching_latekt();
+  void TruthRecoRecoTruthMatching();
+
+
   //int getPFJetMuon(const pat::Jet& pfJet, const reco::PFCandidateCollection *pfCandidateColl);
   int getPFJetMuon(const pat::Jet& pfJet, const edm::View<pat::PackedCandidate>* pfCandidateColl);
 
@@ -143,6 +153,22 @@ private:
   // test
   edm::FileInPath tmva_path_;
 
+  bool doChargedConstOnly_;
+  bool runSubstructure;
+  bool doPFjetID;
+  
+  double ptCut;
+  double trkInefRate_;
+
+  float SDcut = 0.1;
+  float latektcut = 1.0;
+  bool doPFNeutralEnergyScaleVar_;
+  bool doPFChargedEnergyScaleVar_;
+  bool doPFGammaEnergyScaleVar_;
+  bool doSplitMatching_ = true;
+  
+
+
   bool doMatch_;
   bool useVtx_;
   bool useRawPt_;
@@ -219,6 +245,34 @@ private:
     float jer_sf_down[MAXJETS]={0};
     float jec_unc[MAXJETS]={0};
 
+    //substructure
+    ///////// SUBSTR
+    float jt_z_SD[MAXJETS] = {0};
+    float jt_rg_SD[MAXJETS] = {0};
+    float jt_ktg_SD[MAXJETS] = {0};
+    int jt_split_SD[MAXJETS] = {0};
+    bool jt_hasHF_SD[MAXJETS] = {0};
+
+    float jt_z_latekt[MAXJETS] = {0};
+    float jt_rg_latekt[MAXJETS] = {0};
+    float jt_ktg_latekt[MAXJETS] = {0};
+    int jt_split_latekt[MAXJETS] = {0};
+    bool jt_hasHF_latekt[MAXJETS] = {0};
+
+    // For matching the splittings between reco and gen
+    std::vector<fastjet::PseudoJet> jtJetSplits = {};
+    std::vector<fastjet::PseudoJet> refJetSplits = {};
+
+    bool jt_isClosestToTruth_SD[MAXJETS] = {0};
+    bool ref_isClosestToReco_SD[MAXJETS] = {0};
+    float jt_ref_dR_SD[MAXJETS] = {0};
+
+    bool jt_isClosestToTruth_latekt[MAXJETS] = {0};
+    bool ref_isClosestToReco_latekt[MAXJETS] = {0};
+    float jt_ref_dR_latekt[MAXJETS] = {0};
+        
+
+
     // jet true flavour tagging
     int jtParFlav[MAXJETS]={0};
     int jtHadFlav[MAXJETS]={0};
@@ -273,6 +327,16 @@ private:
 
     float jtsym[MAXJETS]={0};
     int jtdroppedBranches[MAXJETS]={0};
+
+
+    float massHF[MAXJETS]={-999};
+    float massHFgen[MAXJETS]={-999};
+
+    float ptHF[MAXJETS]={-999};
+    float ptHFgen[MAXJETS]={-999};
+
+    float ptCh[MAXJETS]={-999};
+    float ptChgen[MAXJETS]={-999};
 
     std::vector<std::vector<float>> jtSubJetPt = {};
     std::vector<std::vector<float>> jtSubJetEta = {};
@@ -519,6 +583,20 @@ private:
     float refparton_pt[MAXJETS]={0};
     int refparton_flavor[MAXJETS]={0};
     int refparton_flavorForB[MAXJETS]={0};
+
+
+    //substructure
+    float ref_z_SD[MAXJETS] = {0};
+    float ref_rg_SD[MAXJETS] = {0};
+    float ref_ktg_SD[MAXJETS] = {0};
+    int ref_split_SD[MAXJETS] = {0};
+    bool ref_hasHF_SD[MAXJETS] = {0};
+
+    float ref_z_latekt[MAXJETS] = {0};
+    float ref_rg_latekt[MAXJETS] = {0};
+    float ref_ktg_latekt[MAXJETS] = {0};
+    int ref_split_latekt[MAXJETS] = {0};
+    bool ref_hasHF_latekt[MAXJETS] = {0};
 
     float refptG[MAXJETS]={0};
     float refetaG[MAXJETS]={0};
