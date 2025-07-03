@@ -62,8 +62,8 @@ private:
   //--------------------------------------------
 
 
-  void IterativeDeclusteringRec(double groom_type, double groom_combine, const reco::Jet& jet);
-  void IterativeDeclusteringGen(double groom_type, double groom_combine, const reco::GenJet& jet);
+  void IterativeDeclusteringRec(int groom_type, bool groom_combine, const reco::Jet& jet);
+  void IterativeDeclusteringGen(int groom_type, bool groom_combine, const reco::GenJet& jet);
   
   void RecoTruthSplitMatching(std::vector<fastjet::PseudoJet> &constituents_level1, fastjet::PseudoJet &hardest_level2, bool *bool_array, int *hardest_level1_split);
   void TruthRecoRecoTruthMatching_SD();
@@ -160,6 +160,7 @@ private:
   double ptCut;
   double trkInefRate_;
 
+  float SDktcut= 1.0;   
   float SDcut = 0.1;
   float latektcut = 1.0;
   bool doPFNeutralEnergyScaleVar_;

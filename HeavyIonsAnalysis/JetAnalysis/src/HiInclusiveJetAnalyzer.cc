@@ -43,6 +43,10 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
 
   //jetTagInfos_ = consumes<reco::JetTagCollection>(edm::InputTag("pfJetProbabilityBJetTagsAK2PFCHSBtag"));
 
+  SDktcut =  iConfig.getUntrackedParameter<double>("SDktcut", 1);
+  SDcut = iConfig.getUntrackedParameter<double>("SDcut", 0.2);
+  latektcut = iConfig.getUntrackedParameter<double>("latektcut", 1);
+
   useQuality_ = iConfig.getUntrackedParameter<bool>("useQuality", true);
   trackQuality_ = iConfig.getUntrackedParameter<std::string>("trackQuality", "highPurity");
 
@@ -534,7 +538,7 @@ void HiInclusiveJetAnalyzer::beginJob() {
     t->Branch("ref_rg_SD",jets_.ref_rg_SD,"ref_rg_SD[nref]/F");
     t->Branch("ref_ktg_SD",jets_.ref_ktg_SD,"ref_ktg_SD[nref]/F");
     t->Branch("ref_split_SD",jets_.ref_split_SD,"ref_split_SD[nref]/I");
-    t->Branch("ref_hasHF_SD",jets_.jt_hasHF_SD,"jt_hasHF_SD[nref]/O");
+    t->Branch("ref_hasHF_SD",jets_.ref_hasHF_SD,"ref_hasHF_SD[nref]/O");
 
     t->Branch("ref_z_latekt",jets_.ref_z_latekt,"ref_z_latekt[nref]/F");
     t->Branch("ref_rg_latekt",jets_.ref_rg_latekt,"ref_rg_latekt[nref]/F");
@@ -1985,8 +1989,7 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
   jets_ = {0};
 }
 
-
-void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(double groom_type, double groom_combine, const reco::Jet& jet)
+void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(int groom_type, bool groom_combine, const reco::Jet& jet)
 {
   
     Int_t nsplit = 0;
@@ -2013,6 +2016,10 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(double groom_type, double 
     try{
         std::vector<fastjet::PseudoJet> particles = {};                         
         auto daughters = jet.getJetConstituents();
+
+        jets_.massHF[jets_.nref] = -999;
+        jets_.ptHF[jets_.nref] = -999;
+        jets_.ptCh[jets_.nref] = -999;
 
         for (auto it = daughters.begin(); it!=daughters.end(); ++it){
 
@@ -2094,7 +2101,7 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(double groom_type, double 
                 jets_.jt_split_latekt[jets_.nref] = std::numeric_limits<int>::min();
             }
       
-            int stopSD = 0;
+            bool stopSD = 0;
             bool flagHF = false, flagHFSD = false, flagHFkt = false;
       
             while (jj.has_parents(j1,j2)) {
@@ -2104,8 +2111,9 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(double groom_type, double 
                 std::vector<fastjet::PseudoJet> j1constits = j1.constituents();
                 for (size_t icon = 0; icon < j1constits.size(); icon++) {
                     fastjet::PseudoJet constit = j1constits[icon];
-                    if (abs(constit.m() - jets_.massHF[jets_.nref]) < 1e-3) {
-                        flagHF = true; // the leading prong has the HF; massHF and constit.m have opposite signs
+               
+                    if ( (abs(constit.m() - jets_.massHF[jets_.nref]) < 1e-5) and (abs(constit.pt() - jets_.ptHF[jets_.nref]) < 1e-5) ) {
+            	        flagHF = true;
                         //std::cout << "pt  " << constit.pt() << " mass " << constit.m() << " " << flagHF << std::endl;
                         break;
                     }
@@ -2119,7 +2127,7 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(double groom_type, double 
                 double k_t = j2.perp()*delta_R;
                 z = j2.perp()/(j1.perp()+j2.perp());
 
-                if (((groom_combine == 0) and (groom_type == 1) and (z > SDcut) and (stopSD == 0)) or ((groom_combine == 1) and (z > SDcut) and (stopSD == 0))) { 
+                if (( !groom_combine and groom_type == 1 and z > SDcut and k_t > SDktcut and !stopSD) or (groom_combine and z > SDcut and k_t > SDktcut and !stopSD )) { 
                     stopSD = 1;
                     zg_SD = z;
                     rg_SD  = delta_R;
@@ -2128,7 +2136,7 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(double groom_type, double 
                     flagHFSD = flagHF;
                 }
         
-                if (((groom_combine == 0) and (groom_type == 0) and (k_t > latektcut)) or ((groom_combine == 1) and (k_t > latektcut))) {
+                if (( !groom_combine and groom_type == 0 and k_t > latektcut) or (groom_combine and k_t > latektcut)) {               
                     zg_latekt = z;
                     rg_latekt  = delta_R;
                     ktg_latekt = k_t;
@@ -2168,9 +2176,9 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringRec(double groom_type, double 
   
 }
 
-void HiInclusiveJetAnalyzer::IterativeDeclusteringGen(double groom_type, double groom_combine,const reco::GenJet& jet)
+void HiInclusiveJetAnalyzer::IterativeDeclusteringGen(int groom_type, bool groom_combine,const reco::GenJet& jet)
 {
-    double nsplit = 0;
+    Int_t nsplit = 0;
 
     double z = 0;
     double zg_SD = 0;
@@ -2193,6 +2201,11 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringGen(double groom_type, double 
     try{
         std::vector<fastjet::PseudoJet> particles = {};                         
         auto daughters = jet.getJetConstituents();
+
+
+        jets_.massHFgen[jets_.nref] = -999;
+        jets_.ptHFgen[jets_.nref] = -999;
+        jets_.ptChgen[jets_.nref] = -999;
 
         for(auto it = daughters.begin(); it!=daughters.end(); ++it){
             //std::cout << "scan gen jet consts, mass: " << (**it).mass() << " charge: " << (**it).charge() << " id: "<< (**it).pdgId() << std::endl;
@@ -2239,7 +2252,7 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringGen(double groom_type, double 
                 jets_.ref_split_latekt[jets_.nref] = std::numeric_limits<int>::min();
             }
 
-            int stopSD = 0;
+            bool stopSD = false;
             bool flagHF = false, flagHFSD = false, flagHFkt = false;
         
             while (jj.has_parents(j1,j2)) {
@@ -2249,7 +2262,7 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringGen(double groom_type, double 
                 std::vector<fastjet::PseudoJet> j1constits = j1.constituents();
                 for (size_t icon = 0; icon < j1constits.size(); icon++) {
                     fastjet::PseudoJet constit = j1constits[icon];
-                    if (abs(constit.m() - jets_.massHF[jets_.nref]) < 1e-3) {
+	                if ( (abs(constit.m() - jets_.massHFgen[jets_.nref]) < 1e-5) and (abs(constit.pt() - jets_.ptHFgen[jets_.nref]) < 1e-5) ) {
                         flagHF = true;
                         break;
                     }
@@ -2266,16 +2279,15 @@ void HiInclusiveJetAnalyzer::IterativeDeclusteringGen(double groom_type, double 
 
                 //std::cout << "Truth split " << nsplit << " with k_T=" << k_t << " z=" << z << " eta " << j2.eta() << " phi " << j2.phi() <<  std::endl; 
 
-                if (((groom_combine == 0) and (groom_type == 1) and (z > SDcut) and (stopSD == 0)) or ((groom_combine == 1) and (z > SDcut) and (stopSD == 0))) { 
-                    stopSD = 1;
+               if (( !groom_combine and groom_type == 1 and z > SDcut and k_t > SDktcut and !stopSD) or (groom_combine and z > SDcut and k_t > SDktcut and !stopSD)) { 
+                    stopSD = true;
                     zg_SD = z;
                     rg_SD  = delta_R;
                     ktg_SD = k_t;
                     SD_split = nsplit;
                     flagHFSD = flagHF;
                 }
-        
-                if (((groom_combine == 0) and (groom_type == 0) and (k_t > latektcut)) or ((groom_combine == 1) and (k_t > latektcut))) {
+                if (( !groom_combine and groom_type == 0 and k_t > latektcut) or (groom_combine and k_t > latektcut)) {        
                     zg_latekt = z;
                     rg_latekt  = delta_R;
                     ktg_latekt = k_t;
