@@ -199,7 +199,7 @@ def candidateBtaggingMiniAOD(process, isMC = True, jetPtMin = 15, jetCorrLevels 
         process.load("RecoHI.HiJetAlgos.aggregatedPFCollection_cfi")
 
         process.aggregatedGenLevel  = process.aggregatedPFCands.clone(
-            chargedOnly = cms.bool(True),
+            chargedOnly = cms.bool(False),
             aggregateHF = cms.bool(True),
             jetSrc = cms.InputTag("patJetsAK"+labelR+"PFCHS"),
             constitSrc = cms.InputTag("packedGenParticles"),
@@ -212,7 +212,7 @@ def candidateBtaggingMiniAOD(process, isMC = True, jetPtMin = 15, jetCorrLevels 
 
         process.aggregatedRecoLevel = process.aggregatedPFCands.clone(
             aggregateHF = cms.bool(True),
-            chargedOnly = cms.bool(True),
+            chargedOnly = cms.bool(False),
             jetSrc = cms.InputTag("patJetsAK"+labelR+"PFCHS"),
             constitSrc = cms.InputTag("packedPFCandidates"),
             doGenJets = cms.bool(False),
@@ -284,7 +284,7 @@ def candidateBtaggingMiniAOD(process, isMC = True, jetPtMin = 15, jetCorrLevels 
             #ak4PFJetsCHS.clone(
             ak4PFJets.clone(
                 src = 'aggregatedRecoLevel' if doAggregation else 'pfCHS',
-                #src = 'pfCHS',
+#                src = 'pfCHS',
                 jetPtMin = jetPtMin,
                 rParam = jetR
             )

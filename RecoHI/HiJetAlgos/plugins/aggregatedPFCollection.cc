@@ -174,7 +174,7 @@ void aggregatedPFCollection::produce(edm::StreamID, edm::Event& iEvent, const ed
         const pat::Jet& jet = (*jets)[j];
 
         if ( jet.pt() < jetPtCut_ ) continue;
-        if ( jet.eta() > jetEtaCut_ ) continue;
+        if ( abs(jet.eta()) > jetEtaCut_ ) continue;
 
         if (aggregateHF_) {
       
@@ -232,9 +232,9 @@ void aggregatedPFCollection::produce(edm::StreamID, edm::Event& iEvent, const ed
                         else if (status == 1) {
                             //add for PF candidate collection output
                             pat::PackedCandidate constituentsPF;
+                            constituentsPF.setPdgId(211);
                             constituentsPF.setCharge(constit->charge());
                             constituentsPF.setP4(constit->p4());
-                            constituentsPF.setPdgId(constit->pdgId());
                             newPFCandCollection->push_back(constituentsPF);
                         }
 

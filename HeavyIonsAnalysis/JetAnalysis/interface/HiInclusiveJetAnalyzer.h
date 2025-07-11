@@ -87,6 +87,7 @@ private:
   edm::InputTag jetTagLabel_;
   edm::EDGetTokenT<pat::JetCollection> jetTag_;
   edm::EDGetTokenT<pat::JetCollection> matchTag_;
+  edm::EDGetTokenT<pat::JetCollection> originalTag_;
   edm::EDGetTokenT<edm::View<pat::PackedCandidate>> pfCandidateLabel_;
   edm::EDGetTokenT<std::vector<pat::PackedGenParticle>> genParticleSrc_;
   edm::EDGetTokenT<edm::View<reco::GenJet>> genjetTag_;
@@ -203,6 +204,8 @@ private:
   bool doSvtx_;
   std::string svTagInfoLabel_;
   bool doJetTrueFlavour_;
+  bool matchOriginal_;
+
 
   TTree* t;
   edm::Service<TFileService> fs1;
@@ -240,6 +243,11 @@ private:
     float jtpt[MAXJETS]={0};
     float jteta[MAXJETS]={0};
     float jtphi[MAXJETS]={0};
+
+    float jtpt_orig[MAXJETS] = {0};
+    float jteta_orig[MAXJETS] = {0};
+    float refpt_orig[MAXJETS] = {0};
+    float refeta_orig[MAXJETS] = {0};
 
     float jer_sf_nom[MAXJETS]={0};
     float jer_sf_up[MAXJETS]={0};

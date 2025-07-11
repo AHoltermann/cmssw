@@ -34,6 +34,8 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   doMatch_ = iConfig.getUntrackedParameter<bool>("matchJets", false);
   jetTag_ = consumes<pat::JetCollection>(iConfig.getParameter<InputTag>("jetTag"));
   matchTag_ = consumes<pat::JetCollection>(iConfig.getUntrackedParameter<InputTag>("matchTag"));
+  originalTag_ = consumes<pat::JetCollection>(iConfig.getParameter<InputTag>("originalTag"));
+  matchOriginal_ = iConfig.getUntrackedParameter<bool>("matchOriginal", true);
 
   doChargedConstOnly_ =  iConfig.getUntrackedParameter<bool>("doChargedConstOnly", true);
 
@@ -216,6 +218,13 @@ void HiInclusiveJetAnalyzer::beginJob() {
   t->Branch("jtpu", jets_.jtpu, "jtpu[nref]/F");
   t->Branch("jtm", jets_.jtm, "jtm[nref]/F");
   t->Branch("jtarea", jets_.jtarea, "jtarea[nref]/F");
+
+  t->Branch("jtpt_orig", jets_.jtpt_orig, "jtpt_orig[nref]/F");
+  t->Branch("jteta_orig", jets_.jtpt_orig, "jteta_orig[nref]/F");
+  if (isMC_){
+    t->Branch("refpt_orig", jets_.refpt_orig, "refpt_orig[nref]/F");
+    t->Branch("refta_orig", jets_.refpt_orig, "refeta_orig[nref]/F");
+  }
 
   t->Branch("jer_sf_nom", jets_.jer_sf_nom, "jer_sf_nom[nref]/F");
   t->Branch("jer_sf_up", jets_.jer_sf_up, "jer_sf_up[nref]/F");
@@ -712,6 +721,10 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
   edm::Handle<pat::JetCollection> matchedjets;
   iEvent.getByToken(matchTag_, matchedjets);
 
+  edm::Handle<pat::JetCollection> originaljets;
+  if (matchOriginal_) iEvent.getByToken(originalTag_, originaljets);
+
+
   edm::Handle<pat::JetCollection> mujets;
   if (doMujets_) iEvent.getByToken(mujetTag_, mujets);
 
@@ -838,10 +851,47 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
     const pat::Jet& jet = (*jets)[j];
     // std::cout << "new jet with pt = " << jet.pt() << std::endl;
     auto pt = useRawPt_ ? jet.correctedJet("Uncorrected").pt() : jet.pt();
-    if (pt < jetPtMin_)
-      continue;
-    if (std::abs(jet.eta()) > jetAbsEtaMax_)
-      continue;
+//    if (pt < jetPtMin_)
+//      continue;
+//    if (std::abs(jet.eta()) > jetAbsEtaMax_)
+//      continue;
+
+
+        int matchOrigIndex = -1;
+        jets_.jtpt_orig[jets_.nref] = -999;
+        jets_.jteta_orig[jets_.nref] = -999;
+        jets_.refpt_orig[jets_.nref] = -999;
+        jets_.refeta_orig[jets_.nref] = -999;
+
+        if (matchOriginal_) {   // 
+              double drMin = 100;
+              for (unsigned int imatch = 0; imatch < originaljets->size(); ++imatch) {
+                  const pat::Jet& mjet = (*originaljets)[imatch];
+                  double dr = deltaR(jet, mjet);
+                  if (dr < drMin) {
+                      drMin = dr;
+                      matchOrigIndex = imatch;
+                  }
+              }
+              const pat::Jet& mjet = (*originaljets)[matchOrigIndex];
+              if (std::abs(mjet.eta()) > jetAbsEtaMax_) continue;
+              if (mjet.pt() < jetPtMin_) continue;
+
+
+              jets_.jtpt_orig[jets_.nref] = mjet.pt();
+              jets_.jteta_orig[jets_.nref] = mjet.eta();
+              if (isMC_ && mjet.genJet()){
+                  jets_.refpt_orig[jets_.nref] = (mjet.genJet())->pt();
+                  jets_.refeta_orig[jets_.nref] = (mjet.genJet())->eta();
+              }
+
+    
+              //std::cout  << " reco jet = " << jet.pt() << " matched reco jet = " << mjet.pt() << std::endl;
+              //if (mjet.genJet()) std::cout << " matched gen jet = " << (mjet.genJet())->pt() << std::endl;
+              
+        }
+
+
 
     if (doMujets_) {
       bool isMujet = false;
@@ -857,6 +907,8 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
 
       if (!isMujet) continue;
     }
+
+
 
     if (doCandidateBtagging_){
       //jets_.discr_deepCSV[jets_.nref] = jet.bDiscriminator(deepCSVJetTags_);
@@ -1702,6 +1754,8 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
         jets_.refdrjt[jets_.nref] = reco::deltaR(jet.eta(), jet.phi(), genjet->eta(), genjet->phi());
 
         IterativeDeclusteringGen(0, 1, *genjet);
+        TruthRecoRecoTruthMatching_SD();
+        TruthRecoRecoTruthMatching_latekt();
 
         if (doSubEvent_) {
           const GenParticle* gencon = genjet->getGenConstituent(0);
