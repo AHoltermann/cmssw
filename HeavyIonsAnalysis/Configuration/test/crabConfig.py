@@ -4,7 +4,7 @@ config = Configuration()
 
 ### General ###s
 config.section_('General')
-config.General.requestName = 'dijet_noAggr_fixedGenBug'
+config.General.requestName = 'dijet_syncPbPbV2_R2'
 config.General.workArea = 'crab_projects'
 config.General.transferOutputs = True
 config.General.transferLogs = True
@@ -12,11 +12,11 @@ config.General.transferLogs = True
 #### JobType ####
 config.section_('JobType')
 config.JobType.pluginName = "Analysis"
-config.JobType.psetName = "forest_miniAOD_106X_MC.py"
+config.JobType.psetName = "forest_miniAOD_106X_MC_withAggregation.py"
 config.JobType.maxMemoryMB = 4000
 config.JobType.allowUndistributedCMSSW = True
 # config.JobType.numCores = 8
-config.JobType.sendExternalFolder = True # To load libxgboost.so
+#config.JobType.sendExternalFolder = True # To load libxgboost.so
 
 #### Data ####
 config.section_("Data")
@@ -26,7 +26,7 @@ config.section_("Data")
 
 ## qcd pp ref
 config.Data.inputDataset = "/QCD_pThat-15_Dijet_TuneCP5_5p02TeV-pythia8/RunIISummer20UL17pp5TeVMiniAODv2-106X_mc2017_realistic_forppRef5TeV_v3-v3/MINIAODSIM"
-# config.Data.inputDataset = "/QCD_pThat-15_bJet_TuneCP5_5p02TeV-pythia8/RunIISummer20UL17pp5TeVMiniAODv2-106X_mc2017_realistic_forppRef5TeV_v3-v3/MINIAODSIM"
+#config.Data.inputDataset = "/QCD_pThat-15_bJet_TuneCP5_5p02TeV-pythia8/RunIISummer20UL17pp5TeVMiniAODv2-106X_mc2017_realistic_forppRef5TeV_v3-v3/MINIAODSIM"
 # config.Data.inputDataset = "/QCD_pThat-15_Mujet_TuneCP5_5p02TeV-pythia8/RunIISummer20UL17pp5TeVMiniAODv2-106X_mc2017_realistic_forppRef5TeV_v3-v2/MINIAODSIM"
 
 ## random qcd miniaod sample
@@ -48,7 +48,7 @@ config.Data.splitting = "LumiBased"
 config.Data.unitsPerJob = 20
 config.Data.totalUnits = -1
 config.Data.publication = False
-config.Data.outLFNDirBase = '/store/user/lkalipol/bJet2023'
+config.Data.outLFNDirBase = '/store/user/mnguyen/bJet2025'
 config.Data.outputDatasetTag = config.General.requestName
 config.Data.ignoreLocality = True
 config.Data.allowNonValidInputDataset = True

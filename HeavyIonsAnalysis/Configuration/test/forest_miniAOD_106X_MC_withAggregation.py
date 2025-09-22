@@ -17,15 +17,15 @@ process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 106X, mc")
 process.source = cms.Source("PoolSource",
     duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
     fileNames = cms.untracked.vstring(
-#        '/store/himc/RunIISummer20UL17pp5TeVMiniAODv2/QCD_pThat-15_bJet_TuneCP5_5p02TeV-pythia8/MINIAODSIM/106X_mc2017_realistic_forppRef5TeV_v3-v3/2530000/67404659-5156-7549-AB1C-20D66F6142B1.root'
-        '/store/user/jmijusko/67404659-5156-7549-AB1C-20D66F6142B1.root'
+        '/store/himc/RunIISummer20UL17pp5TeVMiniAODv2/QCD_pThat-15_bJet_TuneCP5_5p02TeV-pythia8/MINIAODSIM/106X_mc2017_realistic_forppRef5TeV_v3-v3/2530000/67404659-5156-7549-AB1C-20D66F6142B1.root'
+        #'/store/user/jmijusko/67404659-5156-7549-AB1C-20D66F6142B1.root'
         ),
     )
 
 
 # number of events to process, set to -1 to process all events
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1)
+    input = cms.untracked.int32(10000)
     )
 
 # load Global Tag, geometry, etc.
@@ -55,15 +55,17 @@ process.GlobalTag.toGet.extend([
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string("HiForestMiniAOD.root"))
 
-# # edm output for debugging purposes
-# process.output = cms.OutputModule(
-#     "PoolOutputModule",
-#     fileName = cms.untracked.string('HiForestEDM.root'),
-#     outputCommands = cms.untracked.vstring(
-#         'keep *',
-#         )
-# )
-# process.output_path = cms.EndPath(process.output)
+'''
+# edm output for debugging purposes
+process.output = cms.OutputModule(
+    "PoolOutputModule",
+    fileName = cms.untracked.string('HiForestEDM.root'),
+    outputCommands = cms.untracked.vstring(
+        'keep *',
+    )
+)
+process.output_path = cms.EndPath(process.output)
+'''
 
 ###############################################################################
 
@@ -179,7 +181,7 @@ if doDeclustering:
         ptMin = cms.untracked.double(0),
         stableOnly = False
     )
-    process.genJetSequence += process.bDecayAna
+    #process.genJetSequence += process.bDecayAna
     ## Creates the gen particle ntuple bDecayAna/hi
 
 
@@ -195,143 +197,23 @@ for jetLabel in jetLabels:
 
     candidateBtaggingMiniAOD(process, isMC = True, jetPtMin = jetPtMin, jetCorrLevels = ['L2Relative', 'L3Absolute'], doBtagging = doBtagging, labelR = jetLabel, doAggregation = doAggregation)
 
-    '''
-    ## added aggregation here
-    if doAggregation:
-        process.load("RecoHI.HiJetAlgos.TrackToGenParticleMapProducer_cfi")
-        getattr(process,"TrackToGenParticleMapProducer").jetSrc = "selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"
-        process.TrackToGenParticleMapProducer.genParticleSrc = cms.InputTag(taggedGenParticlesName_, "patPackedGenParticles")
-        process.TrackToGenParticleMapProducer.chargedOnly = doChargedOnly
-        process.genJetSequence += process.TrackToGenParticleMapProducer
-        ## Creates the genConstitToGenParticleMap and trackToGenParticleMap
-        
-        process.load("RecoHI.HiJetAlgos.aggregatedPFCollection_cfi")
-        process.aggregatedGenLevel  = process.aggregatedPFCands.clone(
-            chargedOnly = cms.bool(False),
-            aggregateHF = cms.bool(True),
-            jetSrc = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
-            constitSrc = cms.InputTag("packedGenParticles"),
-            doGenJets = cms.bool(True),
-            aggregateWithTruthInfo = cms.bool(True),
-            aggregateWithCuts = cms.bool(False),
-            aggregateWithTMVA = cms.bool(False),
-            candToGenParticleMap = cms.InputTag("TrackToGenParticleMapProducer", "genConstitToGenParticleMap"),
-        )
-
-        process.aggregatedRecoLevel = process.aggregatedPFCands.clone(
-            aggregateHF = cms.bool(True),
-            jetSrc = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
-            constitSrc = cms.InputTag("packedPFCandidates"),
-            doGenJets = cms.bool(False),
-            domatch = cms.bool(False),
-            aggregateWithTruthInfo = cms.bool(True),
-            aggregateWithCuts = cms.bool(False),
-            aggregateWithTMVA = cms.bool(False),
-            tmva_path = cms.FileInPath("RecoHI/HiJetAlgos/data/TMVAClassification_BDTG.weights.xml"),
-            tmva_variables =  cms.vstring(tmva_variables),
-            candToGenParticleMap = cms.InputTag("TrackToGenParticleMapProducer", "trackToGenParticleMap"),
-        )
-
-        process.aggregatedRecoLevel.ipTagInfoLabel = "pfImpactParameter"
-        process.aggregatedRecoLevel.svTagInfoLabel = "pfInclusiveSecondaryVertexFinder"
-
-        process.forest += getattr(process,"aggregatedGenLevel")
-        process.forest += getattr(process,"aggregatedRecoLevel")
-
-        ## new pat jets with aggreagated b
-        from PhysicsTools.PatAlgos.tools.jetTools import addJetCollection
-        addJetCollection(
-            process,
-            postfix            = "",
-            labelName          = "AK"+jetLabel+"PFCHSBTag_aggregated",
-            jetSource          = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
-            algo               = "ak", #name of algo must be in this format
-            rParam             = jetR,
-            pvSource           = cms.InputTag("offlineSlimmedPrimaryVertices"),
-            pfCandidates       = cms.InputTag("aggregatedRecoLevel" if doAggregation else "packedPFCandidates"),
-            #pfCandidates       = cms.InputTag("packedPFCandidates"),
-            svSource           = cms.InputTag("slimmedSecondaryVertices"),
-            muSource           = cms.InputTag("slimmedMuons"),
-            elSource           = cms.InputTag("slimmedElectrons"),
-            getJetMCFlavour    = isMC,
-            genJetCollection   = cms.InputTag(matchedGenJets),
-            #genParticles       = cms.InputTag("hiSignalGenParticles" if isMC else ""),
-            genParticles       = cms.InputTag("prunedGenParticles" if isMC else ""),
-            jetCorrections     = jetCorrectionsAK4,
-        )
-
-    '''
 
     # setup jet analyzer                                                                                                                                                                                                
     setattr(process,"ak"+jetLabel+"PFJetAnalyzer",process.ak4PFJetAnalyzer.clone())
-    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"
-#    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "selectedPatJetsAK"+jetLabel+"PFCHSAggr"
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "patJetsAK"+jetLabel+"PFCHSAggr"
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetName = 'ak'+jetLabel+'PF'
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").matchJets = matchJets
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").matchTag = 'patJetsAK'+jetLabel+'PFUnsubJets'
-    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").originalTag = 'patJetsAK'+jetLabel+'PFCHS'
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").originalTag = 'selectedUpdatedPatJetsAK'+jetLabel+'PFCHSBtag'
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetPtMin = jetPtMin
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetAbsEtaMax = cms.untracked.double(jetAbsEtaMax)
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").rParam = 0.4 if jetLabel=="0" else float(jetLabel)*0.1
-    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetFlavourInfos = cms.InputTag("ak"+jetLabel+"PFFlavourInfos")
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetFlavourInfos = cms.InputTag("patJetFlavourAssociationAK"+jetLabel+"PFCHSAggr")
     if jetLabel != "0": getattr(process,"ak"+jetLabel+"PFJetAnalyzer").genjetTag = "ak"+jetLabel+"GenJetsReclusterNoNu"
-    #getattr(process,"ak"+jetLabel+"PFJetAnalyzer").pfJetProbabilityBJetTags = cms.untracked.string("pfJetProbabilityBJetTagsAK"+jetLabel+"PFCHSBtag")
     
     
     ## NOTE:  This is not yet set up to run multiple cone sizes in the same pass!!
 
-    '''
-    if doDeclustering:
-        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").genParticles = cms.untracked.InputTag(taggedGenParticlesName_, "patPackedGenParticles")
-        
-        process.load("RecoHI.HiJetAlgos.TrackToGenParticleMapProducer_cfi")
-        getattr(process,"TrackToGenParticleMapProducer").jetSrc = "selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"
-        process.TrackToGenParticleMapProducer.genParticleSrc = cms.InputTag(taggedGenParticlesName_, "patPackedGenParticles")
-        process.TrackToGenParticleMapProducer.chargedOnly = doChargedOnly
-        process.genJetSequence += process.TrackToGenParticleMapProducer
-        ## Creates the genConstitToGenParticleMap and trackToGenParticleMap
-        
-        process.load("RecoHI.HiJetAlgos.dynGroomedPATJets_cfi")
-        process.dynGroomedGenJets = process.dynGroomedPATJets.clone(
-            chargedOnly = cms.bool(doChargedOnly),
-            aggregateHF = cms.bool(doAggregation),
-            # aggregateHF = cms.bool(True),
-            jetSrc = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
-            constitSrc = cms.InputTag("packedGenParticles"),
-            doGenJets = cms.bool(True),
-            candToGenParticleMap = cms.InputTag("TrackToGenParticleMapProducer", "genConstitToGenParticleMap"),
-            doLateKt = cms.bool(doLatekt_),
-            rParam = float(jetLabel)*0.1
-        )
-        process.genJetSequence += process.dynGroomedGenJets
-        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").groomedGenJets = cms.untracked.InputTag("dynGroomedGenJets")
-        ## Creates the gen jet subjets
-        
-        process.dynGroomedPFJets = process.dynGroomedPATJets.clone(
-            chargedOnly = cms.bool(doChargedOnly),
-            aggregateHF = cms.bool(doAggregation),
-            # aggregateHF = cms.bool(False),
-            jetSrc = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
-            constitSrc = cms.InputTag("packedPFCandidates"),
-            doGenJets = cms.bool(False),
-            candToGenParticleMap = cms.InputTag("TrackToGenParticleMapProducer", "trackToGenParticleMap"),
-            aggregateWithTruthInfo = cms.bool(False),
-            aggregateWithXGB = cms.bool(False),
-            aggregateWithTMVA = cms.bool(True),
-            aggregateWithCuts = cms.bool(False),
-            #xgb_path = cms.FileInPath("RecoHI/HiJetAlgos/data/sig_vs_bkg.model"),
-            tmva_path = cms.FileInPath("RecoHI/HiJetAlgos/data/TMVAClassification_BDTG.weights.xml"),
-            tmva_variables = cms.vstring(tmva_variables),
-            doLateKt = cms.bool(doLatekt_),
-            trkInefRate = cms.double(0.),
-            rParam = float(jetLabel)*0.1
-        )
-        process.dynGroomedPFJets.ipTagInfoLabel = "pfImpactParameter"
-        process.dynGroomedPFJets.svTagInfoLabel = "pfInclusiveSecondaryVertexFinder"
-        process.recoJetSequence += process.dynGroomedPFJets
-        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").groomedJets = cms.untracked.InputTag("dynGroomedPFJets")
-        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doSubJetsNew = cms.untracked.bool(True)
-    '''
 
     # cone size dependent but not dependent on declustering
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").rhoSrc = cms.InputTag("fixedGridRhoFastjetAll")

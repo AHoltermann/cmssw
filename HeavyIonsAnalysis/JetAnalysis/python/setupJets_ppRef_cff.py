@@ -299,7 +299,8 @@ def candidateBtaggingMiniAOD(process, isMC = True, jetPtMin = 15, jetCorrLevels 
     updateJetCollection(
         process,
         labelName = "AK"+labelR+"PFCHSBtag",
-        jetSource = cms.InputTag("slimmedJets" if labelR == "0" else "patJetsAK"+labelR+"PFCHSAggr"), 
+        #jetSource = cms.InputTag("slimmedJets" if labelR == "0" else "patJetsAK"+labelR+"PFCHSAggr"), 
+        jetSource = cms.InputTag("slimmedJets" if labelR == "0" else "patJetsAK"+labelR+"PFCHS"),   # For b-tagging need non-aggregated jets
         jetCorrections = jetCorrectionsAK4,
         pfCandidates = cms.InputTag('packedPFCandidates'),
         pvSource = cms.InputTag("offlineSlimmedPrimaryVertices"),
@@ -311,16 +312,15 @@ def candidateBtaggingMiniAOD(process, isMC = True, jetPtMin = 15, jetCorrLevels 
         explicitJTA = False
     )
 
-    
+    '''
     setattr(process,"unsubUpdatedPatJetsAK"+labelR+"PFCHSAggr",
             cms.EDProducer("JetMatcherDR",
-                           #source = cms.InputTag("updatedPatJets"+labelR+"PFCHSBtag"),
-                           source = cms.InputTag("updatedPatJets"+labelR+"PFCHSAggr"),
+                           source = cms.InputTag("patJetsAK"+labelR+"PFCHSAggr"),
                            matched = cms.InputTag("patJetsAK"+labelR+"PFUnsubJets")
                        )
         )
     process.patAlgosToolsTask.add(getattr(process,"unsubUpdatedPatJetsAK"+labelR+"PFCHSAggr"))
-
+    '''
     getattr(process,"pfParticleNetAK4TagInfosAK"+labelR+"PFCHSBtag").jet_radius = jetR
 
     
@@ -330,16 +330,16 @@ def candidateBtaggingMiniAOD(process, isMC = True, jetPtMin = 15, jetCorrLevels 
     getattr(process,"patJetsAK"+labelR+"PFCHSAggr").addDiscriminators = False
     #process.patAlgosToolsTask.add(getattr(process,"pfImpactParameterTagInfos"))
     #process.patAlgosToolsTask.add(getattr(process,"pfInclusiveSecondaryVertexFinderTagInfos"))
-    
+    '''
     # Match with unsubtracted jets
     setattr(process,"unsubAK"+labelR+"JetMap",
-            getattr(process,"unsubUpdatedPatJetsAK"+labelR+"PFCHSAggr").clone(
-                source = "selectedUpdatedPatJetsAK"+labelR+"PFCHSAggr"
+            getattr(process,"unsubUpdatedPatJetsAK"+labelR+"PFCHS").clone(
+                source = "selectedUpdatedPatJetsAK"+labelR+"PFCHS"
             )
         )
 
     process.patAlgosToolsTask.add(getattr(process,"unsubAK"+labelR+"JetMap"))
-
+    '''
 
     # Add extra b tagging algos
     from RecoBTag.ImpactParameter.pfJetProbabilityBJetTags_cfi import pfJetProbabilityBJetTags
