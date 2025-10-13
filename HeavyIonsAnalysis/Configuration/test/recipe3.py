@@ -148,7 +148,14 @@ process.forest = cms.Path(
 
 ## Customization 
 doAggregation = True   
-doChargedOnly = False
+doChargedOnly = True
+doLatekt_ = False
+
+tmva_variables = ["trkIp3dSig", "trkIp2dSig", "trkDistToAxis",
+                  "svtxdls", "svtxdls2d", "svtxm", "svtxmcorr",
+                  "svtxnormchi2", "svtxNtrk", "svtxTrkPtOverSv",
+                  "jtpt"]
+
 
 matchJets = True  
 jetPtMin = 15
@@ -189,7 +196,8 @@ for jetLabel in jetLabels:
 
         # setup jet analyzer                                                                                                                                                                                                
     setattr(process,"ak"+jetLabel+"PFJetAnalyzer",process.ak4PFJetAnalyzer.clone())
-    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "patJetsAK"+jetLabel+"PFCHSAggr"
+    #getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "patJetsAK"+jetLabel+"PFCHSAggr"
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetName = 'ak'+jetLabel+'PF'
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").matchJets = matchJets
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").matchTag = 'patJetsAK'+jetLabel+'PFUnsubJets'
@@ -201,7 +209,56 @@ for jetLabel in jetLabels:
     if jetLabel != "0": getattr(process,"ak"+jetLabel+"PFJetAnalyzer").genjetTag = "ak"+jetLabel+"GenJetsReclusterNoNu"
 
     
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").genParticles = cms.untracked.InputTag(taggedGenParticlesName_, "patPackedGenParticles")
+        
+    process.load("RecoHI.HiJetAlgos.TrackToGenParticleMapProducer_cfi")
+    getattr(process,"TrackToGenParticleMapProducer").jetSrc = "selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"
+    process.TrackToGenParticleMapProducer.genParticleSrc = cms.InputTag(taggedGenParticlesName_, "patPackedGenParticles")
+    process.TrackToGenParticleMapProducer.chargedOnly = doChargedOnly
+    process.genJetSequence += process.TrackToGenParticleMapProducer
+    ## Creates the genConstitToGenParticleMap and trackToGenParticleMap
+
+    process.load("RecoHI.HiJetAlgos.dynGroomedPATJets_cfi")
+    process.dynGroomedGenJets = process.dynGroomedPATJets.clone(
+        chargedOnly = cms.bool(doChargedOnly),
+        aggregateHF = cms.bool(doAggregation),
+        # aggregateHF = cms.bool(True),
+        jetSrc = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
+        constitSrc = cms.InputTag("packedGenParticles"),
+        doGenJets = cms.bool(True),
+        candToGenParticleMap = cms.InputTag("TrackToGenParticleMapProducer", "genConstitToGenParticleMap"),
+        doLateKt = cms.bool(doLatekt_),
+        rParam = float(jetLabel)*0.1
+    )
+    process.genJetSequence += process.dynGroomedGenJets
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").groomedGenJets = cms.untracked.InputTag("dynGroomedGenJets")
+    ## Creates the gen jet subjets
     
+    process.dynGroomedPFJets = process.dynGroomedPATJets.clone(
+        chargedOnly = cms.bool(doChargedOnly),
+        aggregateHF = cms.bool(doAggregation),
+        # aggregateHF = cms.bool(False),
+        jetSrc = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
+        constitSrc = cms.InputTag("packedPFCandidates"),
+        doGenJets = cms.bool(False),
+        candToGenParticleMap = cms.InputTag("TrackToGenParticleMapProducer", "trackToGenParticleMap"),
+        aggregateWithTruthInfo = cms.bool(False),
+        aggregateWithXGB = cms.bool(False),
+        aggregateWithTMVA = cms.bool(True),
+        aggregateWithCuts = cms.bool(False),
+        #xgb_path = cms.FileInPath("RecoHI/HiJetAlgos/data/sig_vs_bkg.model"),
+        tmva_path = cms.FileInPath("RecoHI/HiJetAlgos/data/TMVAClassification_BDTG.weights.xml"),
+        tmva_variables = cms.vstring(tmva_variables),
+        doLateKt = cms.bool(doLatekt_),
+        trkInefRate = cms.double(0.),
+        rParam = float(jetLabel)*0.1
+    )
+    process.dynGroomedPFJets.ipTagInfoLabel = "pfImpactParameter"
+    process.dynGroomedPFJets.svTagInfoLabel = "pfInclusiveSecondaryVertexFinder"
+    process.recoJetSequence += process.dynGroomedPFJets
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").groomedJets = cms.untracked.InputTag("dynGroomedPFJets")
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doSubJetsNew = cms.untracked.bool(True)
+
     ## NOTE:  This is not yet set up to run multiple cone sizes in the same pass!!
 
 
@@ -211,10 +268,10 @@ for jetLabel in jetLabels:
 
     if doTracks:
         getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doTracks = cms.untracked.bool(True)
-        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").ipTagInfoLabel = cms.untracked.string("pfImpactParameterTagInfos")
+        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").ipTagInfoLabel = cms.untracked.string("pfImpactParameter")
     if doSvtx:
         getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doSvtx = cms.untracked.bool(True)
-        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").svTagInfoLabel = cms.untracked.string("pfInclusiveSecondaryVertexFinderTagInfos")
+        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").svTagInfoLabel = cms.untracked.string("pfInclusiveSecondaryVertexFinder")
     process.forest += getattr(process,"ak"+jetLabel+"PFJetAnalyzer")
 
 
@@ -247,6 +304,23 @@ process.load('HeavyIonsAnalysis.EventAnalysis.collisionEventSelection_cff')
 #process.pclusterCompatibilityFilter = cms.Path(process.clusterCompatibilityFilter)
 process.pprimaryVertexFilter = cms.Path(process.primaryVertexFilter)
 process.pAna = cms.EndPath(process.skimanalysis)
+
+# Debug prints for secondary vertex configuration
+print("DEBUG: Final configuration summary:")
+print("DEBUG: doSvtx = {doSvtx}")
+print("DEBUG: doTracks = {doTracks}")
+for jetLabel in jetLabels:
+    analyzer_name = "ak{jetLabel}PFJetAnalyzer"
+    if hasattr(process, analyzer_name):
+        analyzer = getattr(process, analyzer_name)
+        print("DEBUG: {analyzer_name} doSvtx = {analyzer.doSvtx.value()}")
+        if hasattr(analyzer, 'svTagInfoLabel'):
+            print("DEBUG: {analyzer_name} svTagInfoLabel = {analyzer.svTagInfoLabel.value()}")
+        if hasattr(analyzer, 'doTracks'):
+            print("DEBUG: {analyzer_name} doTracks = {analyzer.doTracks.value()}")
+        if hasattr(analyzer, 'ipTagInfoLabel'):
+            print("DEBUG: {analyzer_name} ipTagInfoLabel = {analyzer.ipTagInfoLabel.value()}")
+print("DEBUG: Secondary vertex configuration complete")
 
 
 

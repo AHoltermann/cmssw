@@ -17,8 +17,8 @@ process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 106X, mc")
 process.source = cms.Source("PoolSource",
     duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
     fileNames = cms.untracked.vstring(
-        '/store/himc/RunIISummer20UL17pp5TeVMiniAODv2/QCD_pThat-15_bJet_TuneCP5_5p02TeV-pythia8/MINIAODSIM/106X_mc2017_realistic_forppRef5TeV_v3-v3/2530000/67404659-5156-7549-AB1C-20D66F6142B1.root'
-        ),
+        '/store/himc/RunIISummer20UL17pp5TeVMiniAODv2/QCD_pThat-15_Dijet_TuneCP5_5p02TeV-pythia8/MINIAODSIM/106X_mc2017_realistic_forppRef5TeV_v3-v3/40000/20A6EC56-8E3E-004F-9ED0-6949CD64B93D.root'
+    ),
     )
 
 
@@ -152,7 +152,7 @@ tmva_variables = ["trkIp3dSig", "trkIp2dSig", "trkDistToAxis",
                   "svtxnormchi2", "svtxNtrk", "svtxTrkPtOverSv",
                   "jtpt"]
 
-jetLabels = ["2"]
+jetLabels = ["3"]
 
 #common gen stuff to all cone sizes
 if doDeclustering:
@@ -257,7 +257,8 @@ for jetLabel in jetLabels:
 
     # cone size dependent but not dependent on declustering
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").rhoSrc = cms.InputTag("fixedGridRhoFastjetAll")
-    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doTracks = False 
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doTracks = True
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doSvtx = cms.untracked.bool(True) 
     process.forest += getattr(process,"recoJetSequence")
     process.forest += getattr(process,"ak"+jetLabel+"PFJetAnalyzer")
 
