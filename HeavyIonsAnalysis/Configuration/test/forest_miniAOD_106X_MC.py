@@ -152,7 +152,7 @@ tmva_variables = ["trkIp3dSig", "trkIp2dSig", "trkDistToAxis",
                   "svtxnormchi2", "svtxNtrk", "svtxTrkPtOverSv",
                   "jtpt"]
 
-jetLabels = ["3"]
+jetLabels = ["2"]
 
 #common gen stuff to all cone sizes
 if doDeclustering:
@@ -257,8 +257,7 @@ for jetLabel in jetLabels:
 
     # cone size dependent but not dependent on declustering
     getattr(process,"ak"+jetLabel+"PFJetAnalyzer").rhoSrc = cms.InputTag("fixedGridRhoFastjetAll")
-    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doTracks = True
-    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doSvtx = cms.untracked.bool(True) 
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doTracks = False
     process.forest += getattr(process,"recoJetSequence")
     process.forest += getattr(process,"ak"+jetLabel+"PFJetAnalyzer")
 
