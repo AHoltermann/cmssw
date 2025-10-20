@@ -804,7 +804,7 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
   if (doTracks_) jets_.ntrk = 0;
   jets_.nrefTrk = 0;
   if (doSvtx_) {
-    std::cout << "DEBUG: Secondary vertex processing enabled in analyze(), label: " << svTagInfoLabel_ << std::endl;
+    //std::cout << "DEBUG: Secondary vertex processing enabled in analyze(), label: " << svTagInfoLabel_ << std::endl;
     jets_.nsvtx = 0;
     jets_.ntrkInSvtxNotInJet = 0;
   }
@@ -944,13 +944,13 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
        jets_.discr_particleNet_CvsL[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":CvsL");
        jets_.discr_particleNet_QvsG[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":QvsG");
        */
-       // for (auto discrPair : jet.getPairDiscri()) {
-      //   TString label = discrPair.first;
-      //   // if (!label.Contains("Deep") && !label.Contains("deep") && !label.Contains("Net")) continue;
-      //   if (!label.Contains("Net")) continue;
-      //   // if (!label.Contains("pfJetProbabilityBJetTags")) continue;
-      //   std::cout << label << " : " << discrPair.second << std::endl; 
-      // }
+        for (auto discrPair : jet.getPairDiscri()) {
+         TString label = discrPair.first;
+         // if (!label.Contains("Deep") && !label.Contains("deep") && !label.Contains("Net")) continue;
+         // if (!label.Contains("Net")) continue;
+         // if (!label.Contains("pfJetProbabilityBJetTags")) continue;
+         std::cout << label << " : " << discrPair.second << std::endl; 
+       }
       // std::cout << "end of b tagging" << std::endl;
     }
     if (doLegacyBtagging_) {
