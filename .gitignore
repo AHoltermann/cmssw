@@ -1,0 +1,17 @@
+# Example .gitignore for CMSSW
+*.o
+*.so
+*.d
+*.pcm
+*.pyc
+*.pyo
+*.root
+*.log
+*.tmp
+*.pdf
+*.pycache/
+*_temp/
+*_obj/
+_build/
+cmssw_build/
+

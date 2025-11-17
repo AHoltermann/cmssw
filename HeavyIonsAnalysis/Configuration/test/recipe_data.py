@@ -1,0 +1,258 @@
+### HiForest Configuration
+# Input: miniAOD
+# Type: data
+import sys
+
+import FWCore.ParameterSet.Config as cms
+process = cms.Process('HiForest')
+process.options = cms.untracked.PSet()
+
+###############################################################################
+
+# HiForest info
+process.load("HeavyIonsAnalysis.EventAnalysis.HiForestInfo_cfi")
+process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 106X, data")
+
+# input files
+process.source = cms.Source("PoolSource",
+    duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
+    fileNames = cms.untracked.vstring(
+        #'/store/himc/RunIISummer20UL17pp5TeVMiniAODv2/QCD_pThat-15_Dijet_TuneCP5_5p02TeV-pythia8/MINIAODSIM/106X_mc2017_realistic_forppRef5TeV_v3-v3/40000/0B3412D3-9FD9-C344-9ECA-80B728D1CEA6.root'
+        '/store/data/Run2017G/HighEGJet/MINIAOD/UL2017_MiniAODv2-v2/2530000/02656A14-96A9-A543-A55E-245173CA9920.root'
+    ),  
+    )
+
+
+# number of events to process, set to -1 to process all events
+process.maxEvents = cms.untracked.PSet(
+    input = cms.untracked.int32(-1)
+    )
+
+###############################################################################
+
+# load Global Tag, geometry, etc.
+process.load('Configuration.Geometry.GeometryDB_cff')
+process.load('Configuration.StandardSequences.Services_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_cff')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+process.load('FWCore.MessageService.MessageLogger_cfi')
+
+from Configuration.AlCa.GlobalTag import GlobalTag
+process.GlobalTag = GlobalTag(process.GlobalTag, '106X_dataRun2_v35', '')
+process.HiForestInfo.GlobalTagLabel = process.GlobalTag.globaltag
+process.GlobalTag.snapshotTime = cms.string("9999-12-31 23:59:59.000")
+
+'''
+process.GlobalTag.toGet.extend([
+    cms.PSet(record = cms.string("BTagTrackProbability3DRcd"),
+             tag = cms.string("JPcalib_Data94X_2017pp_v2"), # data JP calib tag
+            #  tag = cms.string("JPcalib_MC94X_2017pp_v2"), # mc JP calib tag
+             connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS")
+
+         )
+      ])
+'''
+
+###############################################################################
+
+# root output
+process.TFileService = cms.Service("TFileService",
+    fileName = cms.string("HiForestMiniAOD.root"))
+
+###############################################################################
+# event analysis
+process.load('HeavyIonsAnalysis.EventAnalysis.hltanalysis_cfi')
+process.load('HeavyIonsAnalysis.EventAnalysis.particleFlowAnalyser_cfi')
+process.load('HeavyIonsAnalysis.EventAnalysis.hievtanalyzer_data_cfi')
+process.hiEvtAnalyzer.Vertex = cms.InputTag("offlineSlimmedPrimaryVertices")
+process.hiEvtAnalyzer.doCentrality = cms.bool(False)
+process.hiEvtAnalyzer.doEvtPlane = cms.bool(False)
+process.load('HeavyIonsAnalysis.EventAnalysis.skimanalysis_cfi')
+process.load('HeavyIonsAnalysis.EventAnalysis.hltobject_cfi')
+process.load('HeavyIonsAnalysis.EventAnalysis.l1object_cfi')
+
+from HeavyIonsAnalysis.EventAnalysis.hltobject_cfi import trigger_list_data
+process.hltobject.triggerNames = trigger_list_data
+process.hltobject.triggerNames = cms.vstring('HLT_HIAK4CaloJet30_v', 'HLT_HIAK4CaloJet40_v', 'HLT_HIAK4CaloJet60_v')
+
+
+'''
+################################
+# electrons, photons, muons
+SS2018PbPbMC = "HeavyIonsAnalysis/EGMAnalysis/data/SS2018PbPbMC.dat"
+process.load('HeavyIonsAnalysis.EGMAnalysis.correctedElectronProducer_cfi')
+process.correctedElectrons.correctionFile = SS2018PbPbMC
+process.load('HeavyIonsAnalysis.EGMAnalysis.ggHiNtuplizer_cfi')
+process.ggHiNtuplizer.doGenParticles = cms.bool(True)
+process.ggHiNtuplizer.doMuons = cms.bool(False)
+process.ggHiNtuplizer.electronSrc = "correctedElectrons"
+process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
+'''
+################################
+# jet reco sequence
+process.load('HeavyIonsAnalysis.JetAnalysis.ak4PFJetSequence_pponPbPb_data_cff')
+process.tagInfoSequence = cms.Sequence()
+process.recoJetSequence = cms.Sequence()
+################################
+
+# tracks - configure directly without problematic unpacker
+process.load("HeavyIonsAnalysis.TrackAnalysis.TrackAnalyzer_cfi")
+process.ppTracks = process.trackAnalyzer.clone() # CUSTOM TRACK SETUP TO GET AROUND UNPACKED ISSUE
+process.ppTracks.vertexSrc = cms.InputTag("offlineSlimmedPrimaryVertices")
+process.ppTracks.packedCandSrc = cms.InputTag("packedPFCandidates")
+process.ppTracks.lostTracksSrc = cms.InputTag("lostTracks")
+
+#muons
+process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
+process.load("HeavyIonsAnalysis.MuonAnalysis.unpackedMuons_cfi")
+process.unpackedMuons.muonSelectors = cms.vstring()
+process.load("HeavyIonsAnalysis.MuonAnalysis.muonAnalyzer_cfi")
+process.muonAnalyzer.doGen = cms.bool(False) # ADDED PROPERTIES TO WORK AROUND UNPACKED MUONS DEPENDENCY
+process.muonAnalyzer.muonSrc = cms.InputTag("slimmedMuons")  
+process.muonAnalyzer.vertexSrc = cms.InputTag("offlineSlimmedPrimaryVertices")  
+process.muonAnalyzer.doTrack = cms.bool(False)  
+
+#################################
+# rho
+process.load("RecoJets.JetProducers.fixedGridRhoProducerFastjet_cfi")
+process.fixedGridRhoFastjetAll.pfCandidatesTag = cms.InputTag("packedPFCandidates")
+process.rhoSequence = cms.Sequence(
+    process.fixedGridRhoFastjetAll
+)
+
+###############################################################################
+
+###############################################################################
+# main forest sequence
+process.forest = cms.Path(
+    process.HiForestInfo +
+    process.hltanalysis +
+    process.hiEvtAnalyzer +
+    process.ppTracks +         # Homemade track analyzer using PackedCandidates directly
+    # process.trackSequencePP +  # disabled, this causes map::at error in TrackAndVertexUnpacker
+    # process.unpackedMuons +    # nope: depends on trackSequencePP
+    process.muonAnalyzer +     
+    #process.tagInfoSequence +
+    process.recoJetSequence +
+    process.rhoSequence
+)
+
+## Customization 
+doAggregation = False   
+doChargedOnly = True
+doLatekt_ = False
+
+tmva_variables = ["trkIp3dSig", "trkIp2dSig", "trkDistToAxis",
+                  "svtxdls", "svtxdls2d", "svtxm", "svtxmcorr",
+                  "svtxnormchi2", "svtxNtrk", "svtxTrkPtOverSv",
+                  "jtpt"]
+
+
+matchJets = False  
+jetPtMin = 15
+jetAbsEtaMax = 2.5
+doBtagging = True
+isMC = False
+
+doSvtx = True
+doTracks = True
+
+
+jetLabels = ["3"]
+
+# Generator particle processing removed - not needed for this analysis
+
+# add candidate tagging for all selected jet radii                                                                                                                                                                  
+from HeavyIonsAnalysis.JetAnalysis.setupJets_ppRef_cff import candidateBtaggingMiniAOD
+
+for jetLabel in jetLabels:
+
+    jetR = 0.1*float(jetLabel)
+    if jetLabel == "0": jetR = 0.4
+
+    candidateBtaggingMiniAOD(process, isMC = isMC, jetPtMin = jetPtMin, jetCorrLevels = ['L2Relative', 'L3Absolute'], doBtagging = doBtagging, labelR = jetLabel, doAggregation = doAggregation)
+
+        # setup jet analyzer                                                                                                                                                                                                
+    setattr(process,"ak"+jetLabel+"PFJetAnalyzer",process.ak4PFJetAnalyzer.clone())
+    #getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "patJetsAK"+jetLabel+"PFCHSAggr"
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetTag = "selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetName = 'ak'+jetLabel+'PF'
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").matchJets = matchJets
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").matchTag = 'patJetsAK'+jetLabel+'PFUnsubJets'
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").originalTag = 'selectedUpdatedPatJetsAK'+jetLabel+'PFCHSBtag'
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetPtMin = jetPtMin
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetAbsEtaMax = cms.untracked.double(jetAbsEtaMax)
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").rParam = 0.4 if jetLabel=="0" else float(jetLabel)*0.1
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").jetFlavourInfos = cms.InputTag("patJetFlavourAssociationAK"+jetLabel+"PFCHSAggr")
+    if jetLabel != "0": getattr(process,"ak"+jetLabel+"PFJetAnalyzer").genjetTag = "ak"+jetLabel+"GenJetsReclusterNoNu"
+
+
+
+    process.load("RecoHI.HiJetAlgos.dynGroomedPATJets_cfi")    
+    process.dynGroomedPFJets = process.dynGroomedPATJets.clone(
+        chargedOnly = cms.bool(doChargedOnly),
+        aggregateHF = cms.bool(doAggregation),
+        jetSrc = cms.InputTag("selectedUpdatedPatJetsAK"+jetLabel+"PFCHSBtag"),
+        constitSrc = cms.InputTag("packedPFCandidates"),
+        doGenJets = cms.bool(False),
+        aggregateWithTruthInfo = cms.bool(False),
+        aggregateWithXGB = cms.bool(False),
+        aggregateWithTMVA = cms.bool(True),
+        aggregateWithCuts = cms.bool(False),
+        tmva_path = cms.FileInPath("RecoHI/HiJetAlgos/data/TMVAClassification_BDTG.weights.xml"),
+        tmva_variables = cms.vstring(tmva_variables),
+        doLateKt = cms.bool(doLatekt_),
+        trkInefRate = cms.double(0.),
+        rParam = float(jetLabel)*0.1
+    )
+    process.dynGroomedPFJets.ipTagInfoLabel = "pfImpactParameter"
+    process.dynGroomedPFJets.svTagInfoLabel = "pfInclusiveSecondaryVertexFinder"
+    process.recoJetSequence += process.dynGroomedPFJets
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").groomedJets = cms.untracked.InputTag("dynGroomedPFJets")
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doSubJetsNew = cms.untracked.bool(True)
+
+    ## NOTE:  This is not yet set up to run multiple cone sizes in the same pass!!
+
+
+    # cone size dependent but not dependent on declustering
+    getattr(process,"ak"+jetLabel+"PFJetAnalyzer").rhoSrc = cms.InputTag("fixedGridRhoFastjetAll")
+    #process.forest += getattr(process,"recoJetSequence")
+
+    if doTracks:
+        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doTracks = cms.untracked.bool(True)
+        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").ipTagInfoLabel = cms.untracked.string("pfImpactParameter")
+    if doSvtx:
+        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").doSvtx = cms.untracked.bool(True)
+        getattr(process,"ak"+jetLabel+"PFJetAnalyzer").svTagInfoLabel = cms.untracked.string("pfInclusiveSecondaryVertexFinder")
+    process.forest += getattr(process,"ak"+jetLabel+"PFJetAnalyzer")
+
+
+
+
+#########################
+# Jet Selection
+#########################
+    
+# for b tagging SF
+# process.mujetSelector = cms.EDFilter("PatJetXSelector",
+#                              src = cms.InputTag("slimmedJets"),
+#                              offPV = cms.InputTag("offlineSlimmedPrimaryVertices"),
+#                              cut = cms.string("pt > 5.0 && abs(rapidity()) < 3."),
+#                              dummy = cms.bool(False)
+#                          )
+# process.recoJetSequence += process.mujetSelector
+# process.ak2PFJetAnalyzer.mujetTag = cms.InputTag("mujetSelector")
+
+#########################
+# Event Selection -> add the needed filters here
+#########################
+    
+#process.patJetsAK3PFUnsubJets.addBTagInfo = True
+#process.patJetsAK3PFUnsubJets.addTagInfos = True
+#process.patJetsAK3PFUnsubJets.tagInfoSources = cms.VInputTag(["pfInclusiveSecondaryVertexFinderTagInfos","pfImpactParameterTagInfos"])
+#process.patJetsAK3PFUnsubJets.addDiscriminators = False
+
+process.load('HeavyIonsAnalysis.EventAnalysis.collisionEventSelection_cff')
+#process.pclusterCompatibilityFilter = cms.Path(process.clusterCompatibilityFilter)
+process.pprimaryVertexFilter = cms.Path(process.primaryVertexFilter)
+process.pAna = cms.EndPath(process.skimanalysis)
