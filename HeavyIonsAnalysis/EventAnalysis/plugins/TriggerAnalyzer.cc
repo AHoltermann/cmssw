@@ -132,7 +132,12 @@ void TriggerAnalyzer::analyze(edm::Event const& iEvent, edm::EventSetup const& i
       "HLT_HIAK4PFJet30_v1", "HLT_HIAK4PFJet40_v1", "HLT_HIAK4PFJet60_v1", 
       "HLT_HIAK4PFJet80_v1", "HLT_HIAK4PFJet100_v1",
       "HLT_HIL3Mu3_v1", "HLT_HIL3Mu5_v1", "HLT_HIL3Mu7_v1",
-      "HLT_HIL3Mu5_AK4PFJet30_v1"
+      "HLT_HIL3Mu5_AK4PFJet30_v1",
+      "HLT_ZeroBias_v", "HLT_ZeroBias_Beamspot_v",
+      "HLT_HIZeroBias_part0_v", "HLT_HIZeroBias_part1_v", "HLT_HIZeroBias_part2_v",
+      "HLT_HIZeroBias_part3_v", "HLT_HIZeroBias_part4_v", "HLT_HIZeroBias_part5_v",
+      "HLT_HIZeroBias_part6_v", "HLT_HIZeroBias_part7_v", "HLT_HIZeroBias_part8_v",
+      "HLT_HIZeroBias_part9_v", "HLT_HIZeroBias_part10_v", "HLT_HIZeroBias_part11_v"
     };
 
     if (HltEvtCnt == 0) {
