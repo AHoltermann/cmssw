@@ -318,7 +318,34 @@ process.NoScraping = cms.EDFilter("FilterOutScraping",
 )
 
 process.pBeamScrapingFilter=cms.Path(process.unpackedTracksAndVertices + process.NoScraping)
-
-
-
 process.pAna = cms.EndPath(process.skimanalysis)
+
+from HLTrigger.HLTfilters.hltHighLevel_cfi import hltHighLevel
+process.hltfilter = hltHighLevel.clone(
+    HLTPaths = [
+    'HLT_HIAK4PFJet30_v1', 
+    'HLT_HIAK4PFJet40_v1', 
+    'HLT_HIAK4PFJet60_v1', 
+    'HLT_HIAK4PFJet80_v1', 
+    'HLT_HIAK4PFJet100_v1',
+    'HLT_ZeroBias_v*',
+    'HLT_ZeroBias_Beamspot_v*',
+    'HLT_HIZeroBias_part0_v*',
+    'HLT_HIZeroBias_part1_v*',
+    'HLT_HIZeroBias_part2_v*',
+    'HLT_HIZeroBias_part3_v*',
+    'HLT_HIZeroBias_part4_v*',
+    'HLT_HIZeroBias_part5_v*',
+    'HLT_HIZeroBias_part6_v*',
+    'HLT_HIZeroBias_part7_v*',
+    'HLT_HIZeroBias_part8_v*',
+    'HLT_HIZeroBias_part9_v*',
+    'HLT_HIZeroBias_part10_v*',
+    'HLT_HIZeroBias_part11_v*',
+    ]
+)
+process.filterSequence = cms.Sequence(process.hltfilter)
+process.superFilterPath = cms.Path(process.filterSequence)
+process.skimanalysis.superFilters = cms.vstring('superFilterPath')
+for path in process.paths:
+    getattr(process, path)._seq = process.filterSequence * getattr(process,path)._seq
