@@ -26,7 +26,7 @@ process.source = cms.Source("PoolSource",
 
 # number of events to process, set to -1 to process all events
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10000)
+    input = cms.untracked.int32(-1)
     )
 
 # load Global Tag, geometry, etc.
@@ -158,6 +158,7 @@ process.rhoSequence = cms.Sequence(
 ###############################################################################
 # main forest sequence
 process.forest = cms.Path(
+    process.unpackedTracksAndVertices +  # Run first to skip entire path on exception
     process.HiForestInfo +
     process.hltanalysis +
     process.hiEvtAnalyzer +
@@ -166,7 +167,7 @@ process.forest = cms.Path(
     process.muonAnalyzer +
     #process.tagInfoSequence +
     process.genJetSequence +
-    process.recoJetSequence +
+    process.recoJetSequence + 
     process.rhoSequence
 )
 
@@ -188,7 +189,7 @@ process.Dfinder.tkEtaCut = cms.double(2.4) # before fit
 process.Dfinder.Dchannel = cms.vint32(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0)
 setCutForAllChannelsDfinder(process, dPtCut = 3, VtxChiProbCut = 0.05, svpvDistanceCut = 2.5, alphaCut = 999.)
 # process.Dfinder.printInfo = cms.bool(False)
-process.dfinder = cms.Path(process.DfinderSequence)
+process.dfinder = cms.Path(process.unpackedTracksAndVertices + process.DfinderSequence)
 
 #################### B finder #################
 process.Bfinder.tkPtCut = cms.double(1.) # before fit
@@ -201,8 +202,8 @@ process.Bfinder.svpvDistanceCut = cms.vdouble(3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 0.0)
 process.Bfinder.MuonTriggerMatchingPath = cms.vstring("")
 process.Bfinder.MuonTriggerMatchingFilter = cms.vstring("")
 process.BfinderSequence.insert(0, process.unpackedMuons)
-#process.BfinderSequence.insert(0, process.unpackedTracksAndVertices)
-process.bfinder = cms.Path(process.BfinderSequence)
+process.BfinderSequence.insert(0, process.unpackedTracksAndVertices)
+process.bfinder = cms.Path(process.unpackedTracksAndVertices + process.BfinderSequence)
 
 
 
@@ -382,7 +383,7 @@ process.pprimaryVertexFilter = cms.Path(process.primaryVertexFilter)
 # For miniAOD: convert packedPFCandidates to track collection for beam scraping filter
 #process.load("RecoTracker.FinalTrackSelectors.unpackedTracksAndVertices_cfi")
 
-'''
+
 process.NoScraping = cms.EDFilter("FilterOutScraping",
  applyfilter = cms.untracked.bool(False),
  debugOn = cms.untracked.bool(False),
@@ -395,7 +396,9 @@ process.NoScraping = cms.EDFilter("FilterOutScraping",
 process.pBeamScrapingFilter=cms.Path(process.unpackedTracksAndVertices + process.NoScraping)
 
 process.pAna = cms.EndPath(process.skimanalysis)
-'''
+
+
+
 
 
 
