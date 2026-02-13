@@ -65,6 +65,9 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   doSvtx_ = iConfig.getUntrackedParameter<bool>("doSvtx", false);
   if (doSvtx_) {
     svTagInfoLabel_ = iConfig.getUntrackedParameter<std::string>("svTagInfoLabel");
+    std::cout << "DEBUG: HiInclusiveJetAnalyzer constructor - doSvtx enabled with label: " << svTagInfoLabel_ << std::endl;
+  } else {
+    std::cout << "DEBUG: HiInclusiveJetAnalyzer constructor - doSvtx disabled" << std::endl;
   }
 
 //   taggedGenParticlesToken_ = consumes<std::vector<GenType>>(cfg.getParameter<edm::InputTag>("taggedGenParticleSrc"));
@@ -801,6 +804,7 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
   if (doTracks_) jets_.ntrk = 0;
   jets_.nrefTrk = 0;
   if (doSvtx_) {
+    //std::cout << "DEBUG: Secondary vertex processing enabled in analyze(), label: " << svTagInfoLabel_ << std::endl;
     jets_.nsvtx = 0;
     jets_.ntrkInSvtxNotInJet = 0;
   }
@@ -940,13 +944,13 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
        jets_.discr_particleNet_CvsL[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":CvsL");
        jets_.discr_particleNet_QvsG[jets_.nref] = jet.bDiscriminator(particleNetDiscriminatorsJetTags_ + ":QvsG");
        */
-       // for (auto discrPair : jet.getPairDiscri()) {
-      //   TString label = discrPair.first;
-      //   // if (!label.Contains("Deep") && !label.Contains("deep") && !label.Contains("Net")) continue;
-      //   if (!label.Contains("Net")) continue;
-      //   // if (!label.Contains("pfJetProbabilityBJetTags")) continue;
-      //   std::cout << label << " : " << discrPair.second << std::endl; 
-      // }
+        for (auto discrPair : jet.getPairDiscri()) {
+         TString label = discrPair.first;
+         // if (!label.Contains("Deep") && !label.Contains("deep") && !label.Contains("Net")) continue;
+         // if (!label.Contains("Net")) continue;
+         // if (!label.Contains("pfJetProbabilityBJetTags")) continue;
+         std::cout << label << " : " << discrPair.second << std::endl; 
+       }
       // std::cout << "end of b tagging" << std::endl;
     }
     if (doLegacyBtagging_) {
@@ -1038,9 +1042,23 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
     // std::cout << "New jet with nref " << jets_.nref << std::endl;
     // std::cout << svTagInfos_ << std::endl;
     // std::cout << "start of svtx" << std::endl;
+    
+    // DEBUG: Print all available tag info labels for this jet
+    /*std::cout << "DEBUG: Jet " << jets_.nref << " available tag info labels:" << std::endl;
+    std::vector<std::string> tagInfoLabels = jet.tagInfoLabels();
+    if (tagInfoLabels.empty()) {
+      std::cout << "DEBUG: No tag info labels found for jet " << jets_.nref << std::endl;
+    } else {
+      for (const auto& label : tagInfoLabels) {
+        std::cout << "DEBUG: - " << label << " (hasTagInfo: " << (jet.hasTagInfo(label.c_str()) ? "true" : "false") << ")" << std::endl;
+      }
+    }*/
+    
     if (doSvtx_ && jet.hasTagInfo(svTagInfoLabel_.c_str())) {
+      //std::cout << "DEBUG: Jet " << jets_.nref << " has secondary vertex tag info with label: " << svTagInfoLabel_ << std::endl;
       const reco::CandSecondaryVertexTagInfo *svTagInfo = jet.tagInfoCandSecondaryVertex(svTagInfoLabel_.c_str());
       int nsv = svTagInfo->nVertices();
+      std::cout << "DEBUG: Found " << nsv << " secondary vertices for jet " << jets_.nref << std::endl;
       jets_.jtNsvtx[jets_.nref] = 0;
       for (int isv = 0; isv < nsv; isv++) {
         int ijetSvtx = jets_.nsvtx + isv;
@@ -1116,6 +1134,9 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
       } // sv loop
       jets_.jtNsvtx[jets_.nref] = nsv;
       jets_.nsvtx += nsv;
+    } else if (doSvtx_) {
+      std::cout << "DEBUG: Jet " << jets_.nref << " does NOT have secondary vertex tag info with label: " << svTagInfoLabel_ << std::endl;
+      jets_.jtNsvtx[jets_.nref] = 0;
     } // endif doSvtx_
     // std::cout << "end of svtx" << std::endl;
     // std::cout << "Jet has tag infos: " << std::endl;
