@@ -112,6 +112,7 @@ void pat::TrackAndVertexUnpacker::produce(edm::StreamID, edm::Event& iEvent, con
     reco::Vertex vtx(sv.vertex(), sv.vertexCovariance4D(), sv.t(), sv.vertexChi2(), sv.vertexNdof(), sv.numberOfDaughters());
     for (size_t j = 0; j < sv.numberOfDaughters(); j++) {
       const auto& dau = sv.daughterPtr(j);
+      if (trackKeys.find(dau) == trackKeys.end()) continue;
       reco::TrackRef trkRef(outTracksHandle, trackKeys.at(dau));
       vtx.add(reco::TrackBaseRef(trkRef));
     }
