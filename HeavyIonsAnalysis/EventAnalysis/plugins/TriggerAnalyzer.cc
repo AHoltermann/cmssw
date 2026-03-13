@@ -181,9 +181,12 @@ void TriggerAnalyzer::analyze(edm::Event const& iEvent, edm::EventSetup const& i
 
     for (int itrig = 0; itrig != ntrigs; ++itrig) {
       const std::string& trigname = triggerNames.triggerName(itrig);
+      auto found = pathtoindex.find(trigname);
+      if (found == pathtoindex.end())
+      continue;
       bool accept = hltresults->accept(itrig);
 
-      int index = pathtoindex[trigname];
+      int index = found->second;
       hltPrescl[index] = hltPrescaleProvider_->prescaleValue(iEvent, iSetup, trigname);
 
       hltflag[index] = accept;
