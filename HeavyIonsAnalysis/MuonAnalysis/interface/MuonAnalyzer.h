@@ -125,6 +125,14 @@ private:
   std::vector<bool> recoIDGlobalHighPt_;
   std::vector<bool> recoIDTrkHighPt_;
   std::vector<bool> recoIDInTime_;
+  std::vector<float> recoSoftMva_;
+
+  std::vector<int> recoSimType_;
+  std::vector<int> recoSimExtType_;
+  std::vector<int> recoSimFlavour_;
+  std::vector<int> recoSimPdgId_;
+  std::vector<int> recoSimMotherPdgId_;
+
 
   // inner tracker
   int nInner_;

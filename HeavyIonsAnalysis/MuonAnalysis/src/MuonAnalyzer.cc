@@ -77,6 +77,7 @@ MuonAnalyzer::MuonAnalyzer(const edm::ParameterSet& ps) {
   tree_->Branch("recoIDGlobalHighPt", &recoIDGlobalHighPt_);
   tree_->Branch("recoIDTrkHighPt", &recoIDTrkHighPt_);
   tree_->Branch("recoIDInTime", &recoIDInTime_);
+  tree_->Branch("recoSoftMva", &recoSoftMva_);
 
   // inner tracker
   tree_->Branch("nInner", &nInner_);
@@ -108,6 +109,15 @@ MuonAnalyzer::MuonAnalyzer(const edm::ParameterSet& ps) {
   tree_->Branch("globalDzErr", &globalDzErr_);
   tree_->Branch("globalNormChi2", &globalNormChi2_);
   tree_->Branch("globalNMuonHits", &globalNMuonHits_);
+
+  // Muon simulation matching info; defaults to Unknown on data
+  tree_->Branch("recoSimType", &recoSimType_);
+  tree_->Branch("recoSimExtType", &recoSimExtType_);
+  tree_->Branch("recoSimFlavour", &recoSimFlavour_);
+  tree_->Branch("recoSimPdgId", &recoSimPdgId_);
+  tree_->Branch("recoSimMotherPdgId", &recoSimMotherPdgId_);
+
+
 }
 
 MuonAnalyzer::~MuonAnalyzer() {}
@@ -164,6 +174,7 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
   recoIDGlobalHighPt_.clear();
   recoIDTrkHighPt_.clear();
   recoIDInTime_.clear();
+  recoSoftMva_.clear();
 
   nInner_ = 0;
   innerDxy_.clear();
@@ -193,6 +204,12 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
   globalDzErr_.clear();
   globalNormChi2_.clear();
   globalNMuonHits_.clear();
+
+  recoSimType_.clear();
+  recoSimExtType_.clear();
+  recoSimFlavour_.clear();
+  recoSimPdgId_.clear();
+  recoSimMotherPdgId_.clear();
 
   run_ = e.id().run();
   event_ = e.id().event();
@@ -301,6 +318,13 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
       recoDz_.push_back(mu.muonBestTrack()->dz(pv.position()));
       recoDxyErr_.push_back(mu.muonBestTrack()->dxyError());
       recoDzErr_.push_back(mu.muonBestTrack()->dzError());
+
+      recoSimType_.push_back(static_cast<int>(mu.simType()));
+      recoSimExtType_.push_back(static_cast<int>(mu.simExtType()));
+      recoSimFlavour_.push_back(mu.simFlavour());
+      recoSimPdgId_.push_back(mu.simPdgId());
+      recoSimMotherPdgId_.push_back(mu.simMotherPdgId());
+
 
       // initialize with unphysical values
       float recoIP3D = -999;
@@ -418,6 +442,7 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
       recoIDGlobalHighPt_.push_back(mu.passed(reco::Muon::CutBasedIdGlobalHighPt));
       recoIDTrkHighPt_.push_back(mu.passed(reco::Muon::CutBasedIdTrkHighPt));
       recoIDInTime_.push_back(mu.passed(reco::Muon::InTimeMuon));
+      recoSoftMva_.push_back(mu.softMvaValue());
 
     }  // muons loop
   }    // end of doReco_

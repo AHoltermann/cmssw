@@ -19,8 +19,9 @@ process.source = cms.Source("PoolSource",
     skipBadFiles = cms.untracked.bool(True),
     fileNames = cms.untracked.vstring(
         #'/store/himc/RunIISummer20UL17pp5TeVMiniAODv2/QCD_pThat-15_Dijet_TuneCP5_5p02TeV-pythia8/MINIAODSIM/106X_mc2017_realistic_forppRef5TeV_v3-v3/40000/0B3412D3-9FD9-C344-9ECA-80B728D1CEA6.root'
-        '/store/data/Run2017G/HighEGJet/MINIAOD/UL2017_MiniAODv2-v2/2530000/02656A14-96A9-A543-A55E-245173CA9920.root'
-    ),  
+        #'/store/data/Run2017G/HighEGJet/MINIAOD/UL2017_MiniAODv2-v2/2530000/02656A14-96A9-A543-A55E-245173CA9920.root'
+    	'store/data/Run2017G/DoubleMuon/MINIAOD/UL2017_MiniAODv2-v1/110000/002B68F9-703B-0F47-AC73-CD040D50A932.root'
+	),  
     )
 
 
