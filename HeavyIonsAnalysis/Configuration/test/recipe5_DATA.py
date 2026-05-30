@@ -19,8 +19,8 @@ process.source = cms.Source("PoolSource",
     skipBadFiles = cms.untracked.bool(True),
     fileNames = cms.untracked.vstring(
         #'/store/himc/RunIISummer20UL17pp5TeVMiniAODv2/QCD_pThat-15_Dijet_TuneCP5_5p02TeV-pythia8/MINIAODSIM/106X_mc2017_realistic_forppRef5TeV_v3-v3/40000/0B3412D3-9FD9-C344-9ECA-80B728D1CEA6.root'
-        #'/store/data/Run2017G/HighEGJet/MINIAOD/UL2017_MiniAODv2-v2/2530000/02656A14-96A9-A543-A55E-245173CA9920.root'
-    	'store/data/Run2017G/DoubleMuon/MINIAOD/UL2017_MiniAODv2-v1/110000/002B68F9-703B-0F47-AC73-CD040D50A932.root'
+        '/store/data/Run2017G/HighEGJet/MINIAOD/UL2017_MiniAODv2-v2/2530000/02656A14-96A9-A543-A55E-245173CA9920.root'
+    	#'/store/data/Run2017G/DoubleMuon/MINIAOD/UL2017_MiniAODv2-v1/110000/002B68F9-703B-0F47-AC73-CD040D50A932.root'
 	),  
     )
 
@@ -62,7 +62,7 @@ process.GlobalTag.toGet.extend([
 
 # root output
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string("HiForestMiniAOD_.root"))
+    fileName = cms.string("HiForestMiniAOD.root"))
 
 ###############################################################################
 # event analysis
@@ -158,7 +158,7 @@ process.Dfinder.tkEtaCut = cms.double(2.4) # before fit
 process.Dfinder.Dchannel = cms.vint32(1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0)
 setCutForAllChannelsDfinder(process, dPtCut = 3, VtxChiProbCut = 0.05, svpvDistanceCut = 2.5, alphaCut = 999.)
 # process.Dfinder.printInfo = cms.bool(False)
-process.dfinder = cms.Path(process.DfinderSequence)
+#process.dfinder = cms.Path(process.DfinderSequence)
 
 #################### B finder #################
 process.Bfinder.tkPtCut = cms.double(1.) # before fit
@@ -172,7 +172,7 @@ process.Bfinder.MuonTriggerMatchingPath = cms.vstring("")
 process.Bfinder.MuonTriggerMatchingFilter = cms.vstring("")
 process.BfinderSequence.insert(0, process.unpackedMuons)
 process.BfinderSequence.insert(0, process.unpackedTracksAndVertices)
-process.bfinder = cms.Path(process.BfinderSequence)
+#process.bfinder = cms.Path(process.BfinderSequence)
 
 
 ## Customization 
