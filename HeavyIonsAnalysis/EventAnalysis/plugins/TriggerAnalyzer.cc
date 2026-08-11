@@ -22,6 +22,31 @@
 
 #include "TTree.h"
 
+#include <string>
+#include <vector>
+
+namespace {
+bool pathMatches(const std::string& path, const std::vector<std::string>& patterns) {
+  if (patterns.empty()) {
+    return true;
+  }
+
+  for (auto const& pattern : patterns) {
+    if (pattern.empty()) {
+      continue;
+    }
+    if (pattern.back() == '*') {
+      if (path.rfind(pattern.substr(0, pattern.size() - 1), 0) == 0) {
+        return true;
+      }
+    } else if (path == pattern) {
+      return true;
+    }
+  }
+  return false;
+}
+}  // namespace
+
 class TriggerAnalyzer : public edm::one::EDAnalyzer<edm::one::WatchRuns> {
 public:
   TriggerAnalyzer(edm::ParameterSet const& conf);
@@ -53,6 +78,7 @@ private:
 
   std::vector<std::string> hltdummies;
   std::vector<std::string> l1dummies;
+  std::vector<std::string> hltPaths_;
 
   std::map<std::string, int> pathtoindex;
 
@@ -82,6 +108,7 @@ TriggerAnalyzer::TriggerAnalyzer(edm::ParameterSet const& conf)
       processName_(conf.getParameter<std::string>("HLTProcessName")),
       hltdummies(conf.getParameter<std::vector<std::string>>("hltdummybranches")),
       l1dummies(conf.getParameter<std::vector<std::string>>("l1dummybranches")),
+      hltPaths_(conf.getParameter<std::vector<std::string>>("hltPaths")),
       hltresultsToken_(consumes<edm::TriggerResults>(conf.getParameter<edm::InputTag>("hltresults"))),
       l1resultsToken_(consumes<GlobalAlgBlkBxCollection>(conf.getParameter<edm::InputTag>("l1results"))),
       l1GtMenuToken_(esConsumes<L1TUtmTriggerMenu, L1TUtmTriggerMenuRcd>()),
@@ -139,25 +166,27 @@ void TriggerAnalyzer::analyze(edm::Event const& iEvent, edm::EventSetup const& i
       int itdum = 0;
       for (auto const& dummy : hltdummies) {
         TString dummyname(dummy.data());
-        if(dummyname.Contains("HLT_HIPuAK4CaloJet") && dummyname.Contains("Eta5p1") && !dummyname.Contains("Cent") ){
-	  t_->Branch(dummyname, hltflag + itdum, dummyname + "/I");
-	  t_->Branch(dummyname + "_PrescaleNumerator", hltPrescaleNumerator + itdum, dummyname + "_PrescaleNumerator/I");
-	  t_->Branch(dummyname + "_PrescaleDenominator", hltPrescaleDenominator + itdum, dummyname + "_PrescaleDenominator/I");
-	  pathtoindex[dummy] = itdum;
-	  ++itdum;
-	}
+        if (!pathMatches(dummy, hltPaths_)) {
+          continue;
+        }
+        t_->Branch(dummyname, hltflag + itdum, dummyname + "/I");
+        t_->Branch(dummyname + "_PrescaleNumerator", hltPrescaleNumerator + itdum, dummyname + "_PrescaleNumerator/I");
+        t_->Branch(dummyname + "_PrescaleDenominator", hltPrescaleDenominator + itdum, dummyname + "_PrescaleDenominator/I");
+        pathtoindex[dummy] = itdum;
+        ++itdum;
       }
 
       for (int itrig = 0; itrig != ntrigs; ++itrig) {
         const std::string& trigname = triggerNames.triggerName(itrig);
         if (pathtoindex.find(trigname) == pathtoindex.end()) {
+          if (!pathMatches(trigname, hltPaths_)) {
+            continue;
+          }
           TString hltname = trigname;
-	  if(hltname.Contains("HLT_HIPuAK4CaloJet") && hltname.Contains("Eta5p1") && !hltname.Contains("Cent") ){
-	    t_->Branch(hltname, hltflag + itdum + itrig, hltname + "/I");
-	    t_->Branch(hltname + "_PrescaleNumerator", hltPrescaleNumerator + itdum + itrig, hltname + "_PrescaleNumerator/I");
-	    t_->Branch(hltname + "_PrescaleDenominator", hltPrescaleDenominator + itdum + itrig, hltname + "_PrescaleDenominator/I");
-	    pathtoindex[trigname] = itdum + itrig;
-	  }
+          t_->Branch(hltname, hltflag + itdum + itrig, hltname + "/I");
+          t_->Branch(hltname + "_PrescaleNumerator", hltPrescaleNumerator + itdum + itrig, hltname + "_PrescaleNumerator/I");
+          t_->Branch(hltname + "_PrescaleDenominator", hltPrescaleDenominator + itdum + itrig, hltname + "_PrescaleDenominator/I");
+          pathtoindex[trigname] = itdum + itrig;
         }
       }
 
@@ -168,17 +197,19 @@ void TriggerAnalyzer::analyze(edm::Event const& iEvent, edm::EventSetup const& i
     FractionalPrescale thisTriggerPrescale;
     for (int itrig = 0; itrig != ntrigs; ++itrig) {
       const std::string& trigname = triggerNames.triggerName(itrig);
-      TString hltname = trigname;
-      if(hltname.Contains("HLT_HIPuAK4CaloJet") && hltname.Contains("Eta5p1") && !hltname.Contains("Cent") ){
-	bool accept = hltresults->accept(itrig);
-	
-	int index = pathtoindex[trigname];
-	thisTriggerPrescale = hltPrescaleProvider_->prescaleValue<FractionalPrescale>(iEvent, iSetup, trigname);
-	hltPrescaleNumerator[index] = thisTriggerPrescale.numerator();
-	hltPrescaleDenominator[index] = thisTriggerPrescale.denominator();
-	
-	hltflag[index] = accept;
+      auto const pathIndex = pathtoindex.find(trigname);
+      if (pathIndex == pathtoindex.end()) {
+        continue;
       }
+
+      bool accept = hltresults->accept(itrig);
+
+      int index = pathIndex->second;
+      thisTriggerPrescale = hltPrescaleProvider_->prescaleValue<FractionalPrescale>(iEvent, iSetup, trigname);
+      hltPrescaleNumerator[index] = thisTriggerPrescale.numerator();
+      hltPrescaleDenominator[index] = thisTriggerPrescale.denominator();
+
+      hltflag[index] = accept;
     }
   } else {
     edm::LogInfo("TriggerAnalyzer") << "-- No Trigger Result" << std::endl;
