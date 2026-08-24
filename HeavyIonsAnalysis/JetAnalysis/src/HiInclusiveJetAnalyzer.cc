@@ -539,8 +539,8 @@ void HiInclusiveJetAnalyzer::beginJob() {
     t->Branch("trkPt", jets_.trkPt, "trkPt[ntrk]/F");
     t->Branch("trkEta", jets_.trkEta, "trkEta[ntrk]/F");
     t->Branch("trkPhi", jets_.trkPhi, "trkPhi[ntrk]/F");
-    // Uncomment for training tuples?
-    /*    t->Branch("trkIp3d", jets_.trkIp3d, "trkIp3d[ntrk]/F");
+    // Track impact-parameter information for training tuples.
+    t->Branch("trkIp3d", jets_.trkIp3d, "trkIp3d[ntrk]/F");
     t->Branch("trkIp3dSig", jets_.trkIp3dSig, "trkIp3dSig[ntrk]/F");
     t->Branch("trkIp2d", jets_.trkIp2d, "trkIp2d[ntrk]/F");
     t->Branch("trkIp2dSig", jets_.trkIp2dSig, "trkIp2dSig[ntrk]/F");
@@ -550,7 +550,7 @@ void HiInclusiveJetAnalyzer::beginJob() {
     t->Branch("trkIpProb2d", jets_.trkIpProb2d, "trkIpProb2d[ntrk]/F");
     t->Branch("trkDz", jets_.trkDz, "trkDz[ntrk]/F");
     t->Branch("trkPdgId", jets_.trkPdgId, "trkPdgId[ntrk]/I");
-    t->Branch("trkMatchSta", jets_.trkMatchSta, "trkMatchSta[ntrk]/I"); */
+    t->Branch("trkMatchSta", jets_.trkMatchSta, "trkMatchSta[ntrk]/I");
 
     t->Branch("trkDeta", jets_.trkDeta, "trkDeta[ntrk]/F");
     t->Branch("trkDphi", jets_.trkDphi, "trkDphi[ntrk]/F");
@@ -1141,8 +1141,7 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
 	  jets_.trkEta[ijetTrack] = constit->eta();
 	  jets_.trkPhi[ijetTrack] = constit->phi();
 
-	  // Uncomment following for training tuples:
-	  /*
+	  // Track impact-parameter information for training tuples.
 	  jets_.trkIp3d[ijetTrack] = trkIPData.ip3d.value();
 	  jets_.trkIp3dSig[ijetTrack] = trkIPData.ip3d.significance();
 	  
@@ -1154,7 +1153,6 @@ void HiInclusiveJetAnalyzer::analyze(const Event& iEvent, const EventSetup& iSet
 	  
 	  jets_.trkDistToAxis[ijetTrack] = trkIPData.distanceToJetAxis.value();
 	  jets_.trkDistToAxisSig[ijetTrack] = trkIPData.distanceToJetAxis.significance();
-	  */
 	  jets_.trkSvtxId[ijetTrack] = -1;
 	
 	  if (doSvtx_ && matchIndex >=0 && mjet.hasTagInfo(svTagInfoLabel_.c_str())) {

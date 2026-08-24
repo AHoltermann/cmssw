@@ -49,6 +49,7 @@ process.load('FWCore.MessageService.MessageLogger_cfi')
 
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_data_promptlike_hi', '') ### FLAG
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'Autumn18_HI_V8_DATA_AK3PF', '') ### FLAG
 process.HiForestInfo.GlobalTagLabel = process.GlobalTag.globaltag
 process.GlobalTag.snapshotTime = cms.string("9999-12-31 23:59:59.000")
 
@@ -192,7 +193,6 @@ process.BfinderSequence.insert(0, process.unpackedTracksAndVertices)
 doAggregation = False   
 doChargedOnly = True
 doLatekt_ = False
-doDynamicGrooming = False
 
 tmva_variables = ["trkIp3dSig", "trkIp2dSig", "trkDistToAxis",
                   "svtxdls", "svtxdls2d", "svtxm", "svtxmcorr",
@@ -200,86 +200,67 @@ tmva_variables = ["trkIp3dSig", "trkIp2dSig", "trkDistToAxis",
                   "jtpt"]
 
 
-matchJets = True
 jetPtMin = 45
 jetAbsEtaMax = 2.5
 doBtagging = True
 isMC = False
+# The analyzer uses this reco-to-reco match to access the embedded IP/SV tag
+# information even on data.
+matchJets = True
 
 doSvtx = True
 doTracks = True
 doAggregation = True
+doHiJetID = False
 
 
-jetLabels = ["3"]
-#jetLabel = "3"
+jetLabel = "3"
 
 # Generator particle processing removed - not needed for this analysis
 
 # add candidate tagging, copy/paste to add other jet radii
 from HeavyIonsAnalysis.JetAnalysis.deepNtupleSettingsFullAggregation_cff import candidateBtaggingMiniAOD
+candidateBtaggingMiniAOD(
+    process,
+    isMC=isMC,
+    jetPtMin=jetPtMin,
+    jetCorrLevels=['L2Relative', 'L3Absolute', 'L2L3Residual'],
+    doBtagging=doBtagging,
+    labelR=jetLabel,
+    runAggregation=doAggregation,
+)
 
-for jetLabel in jetLabels:
+# setup jet analyzer
+setattr(process,"ak"+jetLabel+"CsPFJetAnalyzer",process.akCs4PFJetAnalyzer.clone())
+#getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetTag = "patJetsAK"+jetLabel+"PFCHSAggr"
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetTag = "selectedUpdatedPatJetsDeepFlavour"
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetName = 'ak'+jetLabel+'CsPF'
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").matchJets = matchJets
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").doHiJetID = doHiJetID
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").matchTag = 'patJetsAK'+jetLabel+'PFUnsubJets'
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").originalCSTag = cms.InputTag("selectedUpdatedPatJetsDeepFlavour")
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetPtMin = jetPtMin
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetAbsEtaMax = cms.untracked.double(jetAbsEtaMax)
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").doPFjetID = cms.untracked.bool(True)
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").rParam = 0.4 if jetLabel=="0" else float(jetLabel)*0.1
+if isMC:
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetFlavourInfos = cms.InputTag("ak"+jetLabel+"PFUnsubJetFlavourInfos")
+    if jetLabel != "0": getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").genjetTag = cms.InputTag("ak"+jetLabel+"GenJetsReclusterWithNu")
 
-    jetR = 0.1*float(jetLabel)
-    if jetLabel == "0": jetR = 0.4
-
-    candidateBtaggingMiniAOD(process, isMC = isMC, jetPtMin = jetPtMin, jetCorrLevels = ['L2Relative', 'L3Absolute'], doBtagging = doBtagging, labelR = jetLabel)
-
-        # setup jet analyzer                                                                                                                                                                                                
-    setattr(process,"ak"+jetLabel+"CsPFJetAnalyzer",process.akCs4PFJetAnalyzer.clone())
-    #getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetTag = "patJetsAK"+jetLabel+"PFCHSAggr"
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetTag = "selectedUpdatedPatJetsDeepFlavour"
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetName = 'ak'+jetLabel+'CsPF'
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").matchJets = matchJets
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").matchTag = "selectedUpdatedPatJetsDeepFlavour"
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").originalCSTag = cms.InputTag("selectedUpdatedPatJetsDeepFlavour")
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetPtMin = jetPtMin
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetAbsEtaMax = cms.untracked.double(jetAbsEtaMax)
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").rParam = 0.4 if jetLabel=="0" else float(jetLabel)*0.1
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").jetFlavourInfos = cms.InputTag("patJetFlavourAssociationAK"+jetLabel+"PFCHSAggr")
-    if jetLabel != "0": getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").genjetTag = "ak"+jetLabel+"GenJetsReclusterNoNu"
-
-
-
-    if doDynamicGrooming:
-        process.load("RecoHI.HiJetAlgos.dynGroomedPATJets_cfi")
-        process.dynGroomedPFJets = process.dynGroomedPATJets.clone(
-            chargedOnly = cms.bool(doChargedOnly),
-            aggregateHF = cms.bool(doAggregation),
-            jetSrc = cms.InputTag("selectedUpdatedPatJetsDeepFlavour"),
-            constitSrc = cms.InputTag("packedPFCandidates"),
-            doGenJets = cms.bool(False),
-            aggregateWithTruthInfo = cms.bool(False),
-            aggregateWithXGB = cms.bool(False),
-            aggregateWithTMVA = cms.bool(True),
-            aggregateWithCuts = cms.bool(False),
-            tmva_path = cms.FileInPath("RecoHI/HiJetAlgos/data/TMVAClassification_BDTG.weights.xml"),
-            tmva_variables = cms.vstring(tmva_variables),
-            doLateKt = cms.bool(doLatekt_),
-            trkInefRate = cms.double(0.),
-            rParam = float(jetLabel)*0.1
-        )
-        process.dynGroomedPFJets.ipTagInfoLabel = "pfImpactParameter"
-        process.dynGroomedPFJets.svTagInfoLabel = "pfInclusiveSecondaryVertexFinder"
-        process.recoJetSequence += process.dynGroomedPFJets
-        getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").groomedJets = cms.untracked.InputTag("dynGroomedPFJets")
-        getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").doSubJetsNew = cms.untracked.bool(True)
-
-    ## NOTE:  This is not yet set up to run multiple cone sizes in the same pass!!
-
-
-    # cone size dependent but not dependent on declustering
-    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").rhoSrc = cms.InputTag("fixedGridRhoFastjetAll")
-    #process.forest += getattr(process,"recoJetSequence")
-
-    if doTracks:
-        getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").doTracks = cms.untracked.bool(True)
-        getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").ipTagInfoLabel = cms.untracked.string("pfImpactParameter")
-    if doSvtx:
-        getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").doSvtx = cms.untracked.bool(True)
-        getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").svTagInfoLabel = cms.untracked.string("pfInclusiveSecondaryVertexFinder")
-    process.forest += getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer")
+# cone size dependent but not dependent on declustering
+getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").rhoSrc = cms.InputTag("fixedGridRhoFastjetAll")
+#process.forest += getattr(process,"recoJetSequence")
+if doBtagging:
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").useNewBtaggers = True
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").pfJetProbabilityBJetTag = cms.untracked.string("pfJetProbabilityBJetTagsDeepFlavour")
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").pfUnifiedParticleTransformerAK4JetTags = cms.untracked.string("pfUnifiedParticleTransformerAK4JetTagsDeepFlavour")
+if doTracks:
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").doTracks = cms.untracked.bool(True)
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").ipTagInfoLabel = cms.untracked.string("pfImpactParameter")
+if doSvtx:
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").doSvtx = cms.untracked.bool(True)
+    getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer").svTagInfoLabel = cms.untracked.string("pfInclusiveSecondaryVertexFinder")
+process.forest += getattr(process,"ak"+jetLabel+"CsPFJetAnalyzer")
 
 
 
@@ -302,10 +283,13 @@ for jetLabel in jetLabels:
 # Event Selection -> add the needed filters here
 #########################
     
-#process.patJetsAK3PFUnsubJets.addBTagInfo = True
-#process.patJetsAK3PFUnsubJets.addTagInfos = True
-#process.patJetsAK3PFUnsubJets.tagInfoSources = cms.VInputTag(["pfInclusiveSecondaryVertexFinderTagInfos","pfImpactParameterTagInfos"])
-#process.patJetsAK3PFUnsubJets.addDiscriminators = False
+process.patJetsAK3PFUnsubJets.addBTagInfo = True
+process.patJetsAK3PFUnsubJets.addTagInfos = True
+process.patJetsAK3PFUnsubJets.tagInfoSources = cms.VInputTag(
+    "pfInclusiveSecondaryVertexFinderTagInfos",
+    "pfImpactParameterTagInfos",
+)
+process.patJetsAK3PFUnsubJets.addDiscriminators = False
 
 process.load('HeavyIonsAnalysis.EventAnalysis.collisionEventSelection_cff')
 #process.pclusterCompatibilityFilter = cms.Path(process.clusterCompatibilityFilter)

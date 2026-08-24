@@ -58,6 +58,7 @@ private:
   edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> trackBuilderToken_;
 
   bool doGen_;
+  bool doSim_;
   bool doReco_;
 
   TTree* tree_;
@@ -94,6 +95,7 @@ private:
   std::vector<float> recoL1Phi_;
   std::vector<int> recoCharge_;
   std::vector<int> recoType_;
+  std::vector<int> recoSimType_;
   std::vector<bool> recoIsGood_;
 
   std::vector<bool> recoIsGlobal_;

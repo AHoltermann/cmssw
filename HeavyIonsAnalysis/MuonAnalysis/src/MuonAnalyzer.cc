@@ -16,6 +16,7 @@ using namespace HepMC;
 
 MuonAnalyzer::MuonAnalyzer(const edm::ParameterSet& ps) {
   doGen_ = ps.getParameter<bool>("doGen");
+  doSim_ = ps.getParameter<bool>("doSim");
   doReco_ = ps.getUntrackedParameter<bool>("doReco");
 
   vertexToken_ = consumes<std::vector<reco::Vertex>>(ps.getParameter<edm::InputTag>("vertexSrc"));
@@ -54,6 +55,8 @@ MuonAnalyzer::MuonAnalyzer(const edm::ParameterSet& ps) {
   tree_->Branch("recoL1Phi", &recoL1Phi_);
   tree_->Branch("recoCharge", &recoCharge_);
   tree_->Branch("recoType", &recoType_);
+  if (doSim_)
+    tree_->Branch("recoSimType", &recoSimType_);
   tree_->Branch("recoIsGood", &recoIsGood_);
   tree_->Branch("recoIsGlobal", &recoIsGlobal_);
   tree_->Branch("recoIsTracker", &recoIsTracker_);
@@ -147,6 +150,8 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
   recoL1Phi_.clear();
   recoCharge_.clear();
   recoType_.clear();
+  if (doSim_)
+    recoSimType_.clear();
   recoIsGood_.clear();
   recoIsGlobal_.clear();
   recoIsTracker_.clear();
@@ -304,6 +309,8 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
       recoL1Phi_.push_back(mu.hasUserFloat("l1Phi") ? mu.userFloat("l1Phi") : -99);
       recoCharge_.push_back(mu.charge());
       recoType_.push_back(mu.type());
+      if (doSim_)
+        recoSimType_.push_back(static_cast<int>(mu.simType()));
       recoIsGood_.push_back(muon::isGoodMuon(mu, muon::selectionTypeFromString("TMOneStationTight")));
 
       recoIsGlobal_.push_back(mu.isGlobalMuon());

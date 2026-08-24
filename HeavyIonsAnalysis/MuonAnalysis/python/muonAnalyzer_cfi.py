@@ -5,6 +5,7 @@ muonAnalyzer = cms.EDAnalyzer("MuonAnalyzer",
                            vertexSrc = cms.InputTag("offlineSlimmedPrimaryVertices"),
                            doReco = cms.untracked.bool(True),
                            doGen = cms.bool(False),
+                           doSim = cms.bool(False),
                            genparticle = cms.InputTag("packedGenParticles"),
                            simtrack = cms.InputTag("mergedtruth","MergedTrackTruth"),
 )
