@@ -96,6 +96,10 @@ private:
   std::vector<int> recoCharge_;
   std::vector<int> recoType_;
   std::vector<int> recoSimType_;
+  std::vector<int> recoSimExtType_;
+  std::vector<int> recoSimFlavour_;
+  std::vector<int> recoSimPdgId_;
+  std::vector<int> recoSimMotherPdgId_;
   std::vector<bool> recoIsGood_;
 
   std::vector<bool> recoIsGlobal_;

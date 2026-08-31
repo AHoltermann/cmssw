@@ -86,7 +86,7 @@ process.load('HeavyIonsAnalysis.EventAnalysis.HiGenAnalyzer_cfi')
 # event analysis
 process.load('HeavyIonsAnalysis.EventAnalysis.hltanalysis_cfi')
 process.load('HeavyIonsAnalysis.EventAnalysis.particleFlowAnalyser_cfi')
-process.load('HeavyIonsAnalysis.EventAnalysis.hievtanalyzer_data_cfi')
+process.load('HeavyIonsAnalysis.EventAnalysis.hievtanalyzer_mc_cfi')
 process.hiEvtAnalyzer.Vertex = cms.InputTag("offlineSlimmedPrimaryVertices")
 #process.hiEvtAnalyzer.doCentrality = cms.bool(False)
 #process.hiEvtAnalyzer.doEvtPlane = cms.bool(False)
@@ -127,7 +127,7 @@ process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 process.load("HeavyIonsAnalysis.MuonAnalysis.unpackedMuons_cfi")
 process.unpackedMuons.muonSelectors = cms.vstring()
 process.load("HeavyIonsAnalysis.MuonAnalysis.muonAnalyzer_cfi")
-process.muonAnalyzer.doGen = cms.bool(False)
+process.muonAnalyzer.doGen = cms.bool(True)
 process.muonAnalyzer.doSim = cms.bool(True)
 
 

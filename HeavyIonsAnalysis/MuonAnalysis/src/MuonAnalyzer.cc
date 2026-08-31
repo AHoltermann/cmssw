@@ -8,6 +8,8 @@
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 
+#include <cmath>
+
 using namespace std::placeholders;
 using namespace std;
 using namespace reco;
@@ -55,8 +57,13 @@ MuonAnalyzer::MuonAnalyzer(const edm::ParameterSet& ps) {
   tree_->Branch("recoL1Phi", &recoL1Phi_);
   tree_->Branch("recoCharge", &recoCharge_);
   tree_->Branch("recoType", &recoType_);
-  if (doSim_)
+  if (doSim_) {
     tree_->Branch("recoSimType", &recoSimType_);
+    tree_->Branch("recoSimExtType", &recoSimExtType_);
+    tree_->Branch("recoSimFlavour", &recoSimFlavour_);
+    tree_->Branch("recoSimPdgId", &recoSimPdgId_);
+    tree_->Branch("recoSimMotherPdgId", &recoSimMotherPdgId_);
+  }
   tree_->Branch("recoIsGood", &recoIsGood_);
   tree_->Branch("recoIsGlobal", &recoIsGlobal_);
   tree_->Branch("recoIsTracker", &recoIsTracker_);
@@ -150,8 +157,13 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
   recoL1Phi_.clear();
   recoCharge_.clear();
   recoType_.clear();
-  if (doSim_)
+  if (doSim_) {
     recoSimType_.clear();
+    recoSimExtType_.clear();
+    recoSimFlavour_.clear();
+    recoSimPdgId_.clear();
+    recoSimMotherPdgId_.clear();
+  }
   recoIsGood_.clear();
   recoIsGlobal_.clear();
   recoIsTracker_.clear();
@@ -309,8 +321,13 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
       recoL1Phi_.push_back(mu.hasUserFloat("l1Phi") ? mu.userFloat("l1Phi") : -99);
       recoCharge_.push_back(mu.charge());
       recoType_.push_back(mu.type());
-      if (doSim_)
+      if (doSim_) {
         recoSimType_.push_back(static_cast<int>(mu.simType()));
+        recoSimExtType_.push_back(static_cast<int>(mu.simExtType()));
+        recoSimFlavour_.push_back(mu.simFlavour());
+        recoSimPdgId_.push_back(mu.simPdgId());
+        recoSimMotherPdgId_.push_back(mu.simMotherPdgId());
+      }
       recoIsGood_.push_back(muon::isGoodMuon(mu, muon::selectionTypeFromString("TMOneStationTight")));
 
       recoIsGlobal_.push_back(mu.isGlobalMuon());
@@ -429,7 +446,12 @@ void MuonAnalyzer::analyze(const edm::Event& e, const edm::EventSetup& es) {
       recoPFNeuIso_.push_back(mu.pfIsolationR04().sumNeutralHadronEt);
       recoPFPUIso_.push_back(mu.pfIsolationR04().sumPUPt);
 
-      recoIDHybridSoft_.push_back(mu.isGlobalMuon() && mu.isTrackerMuon() && mu.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 && mu.innerTrack()->hitPattern().pixelLayersWithMeasurement() > 0 && fabs(mu.innerTrack()->dxy(pv.position()) < 0.3) && fabs(mu.innerTrack()->dz(pv.position()) < 20.));
+      recoIDHybridSoft_.push_back(
+          mu.isGlobalMuon() && mu.isTrackerMuon() &&
+          mu.innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 &&
+          mu.innerTrack()->hitPattern().pixelLayersWithMeasurement() > 0 &&
+          std::abs(mu.innerTrack()->dxy(pv.position())) < 0.3 &&
+          std::abs(mu.innerTrack()->dz(pv.position())) < 20.);
 
       //  muon selectors available at https://github.com/cms-sw/cmssw/blob/4c9240b33ace61c92c6803f0c4eace9ba06e6c8d/DataFormats/MuonReco/interface/Muon.h#L202
       // Cut-based Ids
